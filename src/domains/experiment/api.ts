@@ -31,7 +31,6 @@ const routes = (): express.Router => {
   router.post(
     '/',
     logRequest({}),
-    validateRequest({ schema: createSchema }),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const item = await create(req.body);
@@ -45,7 +44,7 @@ const routes = (): express.Router => {
   router.get(
     '/:id',
     logRequest({}),
-    validateRequest({ schema: idSchema, isParam: true }),
+    // validateRequest({ schema: idSchema, isParam: true }),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const item = await getById(req.params.id);
@@ -62,8 +61,8 @@ const routes = (): express.Router => {
   router.put(
     '/:id',
     logRequest({}),
-    validateRequest({ schema: idSchema, isParam: true }),
-    validateRequest({ schema: updateSchema }),
+    // validateRequest({ schema: idSchema, isParam: true }),
+    // validateRequest({ schema: updateSchema }),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const item = await updateById(req.params.id, req.body);
@@ -80,7 +79,7 @@ const routes = (): express.Router => {
   router.delete(
     '/:id',
     logRequest({}),
-    validateRequest({ schema: idSchema, isParam: true }),
+    // validateRequest({ schema: idSchema, isParam: true }),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         await deleteById(req.params.id);
