@@ -1,4 +1,4 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Model, Schema } from 'mongoose';
 import { baseSchema } from '../../libraries/db/base-schema';
 
 // Define an interface for the Product document
@@ -13,9 +13,6 @@ const schema = new Schema<IModel>({
 schema.add(baseSchema);
 
 // Create and export the model
-const ProductModel: Model<IModel> = mongoose.model<IModel>(
-  'IModel',
-  productSchema
-);
+const ProductModel: Model<IModel> = mongoose.model<IModel>('IModel', schema);
 
 export default ProductModel;

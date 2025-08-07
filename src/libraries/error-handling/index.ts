@@ -51,7 +51,10 @@ const errorHandler = {
 
 const terminateHttpServerAndExit = async (): Promise<void> => {
   if (httpServerRef) {
-    await new Promise<void>((resolve) => httpServerRef.close(() => resolve())); // Graceful shutdown
+    await new Promise<void>((resolve) => {
+      httpServerRef!.close(() => resolve()); // Graceful shutdown
+    });
+    httpServerRef = null;
   }
   process.exit();
 };

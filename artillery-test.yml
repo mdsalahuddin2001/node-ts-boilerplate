@@ -1,0 +1,74 @@
+# artillery-test.yml - Load test configuration
+config:
+  target: 'http://localhost:4000' # Your API URL
+  phases:
+    # Phase 1: Warm up - gradually increase load
+    - duration: 60 # 1 minute
+      arrivalRate: 5 # 5 requests per second
+      name: 'Warm up'
+
+    # Phase 2: Ramp up - find breaking point
+    - duration: 120 # 2 minutes
+      arrivalRate: 10
+      rampTo: 50 # Increase from 10 to 50 req/sec
+      name: 'Ramp up'
+
+    # Phase 3: Sustained load - test stability
+    - duration: 180 # 3 minutes
+      arrivalRate: 100 # 100 requests per second
+      name: 'Sustained load'
+
+    # Phase 4: Spike test - sudden high load
+    - duration: 30 # 30 seconds
+      arrivalRate: 500 # 500 requests per second
+      name: 'Spike test'
+
+  # Global settings
+  timeout: 30
+  defaults:
+    headers:
+      'Content-Type': 'application/json'
+      'Authorization': 'Bearer your-test-token' # If needed
+
+scenarios:
+  # Test your products endpoint
+  - name: 'Products API Load Test'
+    weight: 100
+    flow:
+      # Test GET products (most common operation)
+      - get:
+          url: '/api/v1/products'
+          expect:
+            - statusCode: 200
+            - hasProperty: 'data'
+
+      # Test with query parameters if your API supports them
+      - get:
+          url: '/api/v1/products?limit=10'
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: '/api/v1/products?page=1&limit=20'
+          expect:
+            - statusCode: 200
+
+      # Test different variations to simulate real usage
+      - get:
+          url: '/api/v1/products?sort=name'
+          expect:
+            - statusCode: [200, 400] # 400 if sorting not implemented
+
+      - get:
+          url: '/api/v1/products?search=test'
+          expect:
+            - statusCode: [200, 400] # 400 if search not implemented
+
+# What to measure
+metrics:
+  - name: 'response_time_p95'
+    unit: 'ms'
+  - name: 'response_time_p99'
+    unit: 'ms'
+  - name: 'errors_rate'
+    unit: 'percent'
