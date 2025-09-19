@@ -1,41 +1,51 @@
-import globals from 'globals';
-import pluginJs from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import js from '@eslint/js';
+import typescript from 'typescript-eslint';
+import security from 'eslint-plugin-security';
+import sonarjs from 'eslint-plugin-sonarjs';
 import jest from 'eslint-plugin-jest';
 
 export default [
+  js.configs.recommended,
+  ...typescript.configs.recommended,
+  security.configs.recommended,
+  sonarjs.configs.recommended,
   {
-    ignores: ['dist', 'build', 'node_modules']
-  },
-  { files: ['**/*.{js,mjs,cjs,ts}', 'test/**/*.{js,ts}'] },
-  { languageOptions: { globals: globals.node } },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  eslintPluginPrettierRecommended,
-  {
-    files: ['test/**/*.{js,ts}'],
-    ...jest.configs['flat/recommended'],
+    files: ['**/*.{ts,js}'],
+    plugins: {
+      '@typescript-eslint': typescript.plugin,
+      security,
+      sonarjs
+    },
     rules: {
-      ...jest.configs['flat/recommended'].rules,
-      'jest/prefer-expect-assertions': 'off'
+      // TypeScript specific
+      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+
+      // Code quality
+      complexity: ['error', { max: 10 }],
+      'max-depth': ['error', 4],
+      'max-lines-per-function': ['error', { max: 50 }],
+      'no-console': 'warn',
+      'prefer-const': 'error',
+
+      // Security
+      'security/detect-object-injection': 'error',
+      'security/detect-non-literal-regexp': 'error',
+
+      // SonarJS rules
+      'sonarjs/cognitive-complexity': ['error', 15],
+      'sonarjs/no-duplicate-string': ['error', 3]
     }
   },
   {
+    files: ['**/*.test.{ts,js}', '**/*.spec.{ts,js}'],
+    plugins: {
+      jest
+    },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      'prettier/prettier': [
-        'error',
-        {
-          singleQuote: true,
-          // parser: 'flow',
-          semi: true,
-          trailingComma: 'none',
-          bracketSameLine: false,
-          bracketSpacing: true,
-          endOfLine: 'auto'
-        }
-      ]
+      ...jest.configs.recommended.rules,
+      'max-lines-per-function': 'off'
     }
   }
 ];

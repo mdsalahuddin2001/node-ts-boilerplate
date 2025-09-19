@@ -22,7 +22,7 @@ The `Dockerfile` outlines the steps to construct our Docker image:
 3. **Installing Dependencies:** We copy `package.json` and use `npm install` to fetch necessary packages.
 4. **Copying Application Code:** We transfer our source code from the `src` folder into the container.
 5. **Setting Environment Variables (Optional):** Production environment variables may be defined within the Dockerfile or provided during container creation.
-6. **Exposing Ports:** We indicate which ports our application listens on (e.g., `EXPOSE 3000`).
+6. **Exposing Ports:** We indicate which ports our application listens on (e.g., `EXPOSE 4000`).
 7. **Defining the Start Command:** This tells Docker how to initiate our application within the container (e.g., `CMD ["npm", "start"]`).
 
 **Building and Deploying**
