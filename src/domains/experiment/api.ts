@@ -1,22 +1,21 @@
-import express, { Request, Response, NextFunction } from 'express';
-import logger from '../../libraries/log/logger';
-import { AppError } from '../../libraries/error-handling/AppError';
+import express, { Request, Response, NextFunction } from "express";
+import logger from "../../libraries/log/logger";
+import { AppError } from "../../libraries/error-handling/AppError";
 
-import { create, search, getById, updateById, deleteById } from './service';
+import { create, search, getById, updateById, deleteById } from "./service";
 
-import { createSchema, updateSchema, idSchema } from './request';
-import { validateRequest } from '../../middlewares/request-validate';
-import { logRequest } from '../../middlewares/log';
+// import { createSchema, updateSchema, idSchema } from './request'
+// import { validateRequest } from '../../middlewares/request-validate'
+import { logRequest } from "../../middlewares/log";
 
-const model: string = 'Product';
+// const model: string = 'Product'
 
 // CRUD for entity
 const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for model`);
-
   router.get(
-    '/',
+    "/",
     logRequest({}),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -25,11 +24,11 @@ const routes = (): express.Router => {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   router.post(
-    '/',
+    "/",
     logRequest({}),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -38,11 +37,11 @@ const routes = (): express.Router => {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   router.get(
-    '/:id',
+    "/:id",
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -55,11 +54,11 @@ const routes = (): express.Router => {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   router.put(
-    '/:id',
+    "/:id",
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     // validateRequest({ schema: updateSchema }),
@@ -73,11 +72,11 @@ const routes = (): express.Router => {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   router.delete(
-    '/:id',
+    "/:id",
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -87,7 +86,7 @@ const routes = (): express.Router => {
       } catch (error) {
         next(error);
       }
-    }
+    },
   );
 
   return router;
