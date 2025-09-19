@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "main": "start.ts",
   "type": "commonjs",
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "prepare-commit-msg": "exec < /dev/tty && npx cz --hook || true"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/start.ts",
@@ -16,7 +26,8 @@
     "create-domain": "ts-node scripts/dev/domain-generator.ts",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "commit": "cz"
   },
   "keywords": [],
   "author": "",

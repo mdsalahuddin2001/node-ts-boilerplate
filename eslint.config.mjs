@@ -1,20 +1,20 @@
-import js from '@eslint/js';
-import typescript from 'typescript-eslint';
-import security from 'eslint-plugin-security';
-import sonarjs from 'eslint-plugin-sonarjs';
-import jest from 'eslint-plugin-jest';
+import js from '@eslint/js'
+import typescript from 'typescript-eslint'
+import security from 'eslint-plugin-security'
+import sonarjs from 'eslint-plugin-sonarjs'
+import jest from 'eslint-plugin-jest'
 
 export default [
   js.configs.recommended,
   ...typescript.configs.recommended,
+  // Security + SonarJS recommended already include plugin registration
   security.configs.recommended,
   sonarjs.configs.recommended,
   {
     files: ['**/*.{ts,js}'],
     plugins: {
       '@typescript-eslint': typescript.plugin,
-      security,
-      sonarjs
+      // ❌ remove security & sonarjs here, already included above
     },
     rules: {
       // TypeScript specific
@@ -29,23 +29,21 @@ export default [
       'no-console': 'warn',
       'prefer-const': 'error',
 
-      // Security
+      // Security rules
       'security/detect-object-injection': 'error',
       'security/detect-non-literal-regexp': 'error',
 
-      // SonarJS rules
-      'sonarjs/cognitive-complexity': ['error', 15],
-      'sonarjs/no-duplicate-string': ['error', 3]
-    }
+      // SonarJS rules (must use object format)
+      'sonarjs/cognitive-complexity': ['error', 15], // just number
+      'sonarjs/no-duplicate-string': ['error', { threshold: 3 }], // object
+    },
   },
   {
     files: ['**/*.test.{ts,js}', '**/*.spec.{ts,js}'],
-    plugins: {
-      jest
-    },
+    ...jest.configs.recommended, // ✅ includes plugin & rules
     rules: {
       ...jest.configs.recommended.rules,
-      'max-lines-per-function': 'off'
-    }
-  }
-];
+      'max-lines-per-function': 'off',
+    },
+  },
+]
