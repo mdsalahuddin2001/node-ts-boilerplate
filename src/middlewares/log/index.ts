@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import logger from "../../libraries/log/logger";
+import { Request, Response, NextFunction } from 'express';
+import logger from '../../libraries/log/logger';
 
 interface LogRequestOptions {
   fields?: string[];
@@ -18,8 +18,7 @@ const logRequest = ({ fields = [] }: LogRequestOptions = {}) => {
     }
     if (req.body) {
       if (fields && fields.length > 0) {
-        //
-        fields.forEach((field) => {
+        fields.forEach(field => {
           // eslint-disable-next-line security/detect-object-injection
           if (req.body[field] !== undefined) {
             // eslint-disable-next-line security/detect-object-injection
@@ -36,9 +35,7 @@ const logRequest = ({ fields = [] }: LogRequestOptions = {}) => {
     // Store the original end method
     const oldEnd = res.end;
     // Override the end method
-    res.end = function (
-      ...args: unknown[]
-    ): Response<unknown, Record<string, unknown>> {
+    res.end = function (...args: unknown[]): Response<unknown, Record<string, unknown>> {
       logger.info(`${req.method} ${req.originalUrl}`, {
         statusCode: res.statusCode,
       });

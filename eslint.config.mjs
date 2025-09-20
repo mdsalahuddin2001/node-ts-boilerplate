@@ -1,8 +1,8 @@
-import js from '@eslint/js'
-import typescript from 'typescript-eslint'
-import security from 'eslint-plugin-security'
-import sonarjs from 'eslint-plugin-sonarjs'
-import jest from 'eslint-plugin-jest'
+import js from '@eslint/js';
+import typescript from 'typescript-eslint';
+import security from 'eslint-plugin-security';
+import sonarjs from 'eslint-plugin-sonarjs';
+import jest from 'eslint-plugin-jest';
 
 export default [
   js.configs.recommended,
@@ -16,7 +16,15 @@ export default [
     },
     rules: {
       // TypeScript specific
-      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          vars: 'all', // check all variables
+          args: 'all', // check all function params
+          ignoreRestSiblings: true, // still allow ...rest without error
+          argsIgnorePattern: '^_', // allow _req, _res, _next (optional)
+        },
+      ],
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
 
@@ -46,4 +54,4 @@ export default [
       'max-lines-per-function': 'off',
     },
   },
-]
+];
