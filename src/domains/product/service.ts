@@ -1,7 +1,6 @@
 import logger from '../../libraries/log/logger';
-
+import { ServerError } from '@/libraries/error-handling';
 import Model, { IProduct } from './schema';
-import { AppError } from '../../libraries/error-handling/AppError';
 
 const model: string = 'product';
 
@@ -11,12 +10,12 @@ const create = async (data: IProduct): Promise<IProduct> => {
     const item = new Model(data);
     const saved = await item.save();
     logger.info(`create(): ${model} created`, {
-      id: saved._id
+      id: saved._id,
     });
     return saved;
   } catch (error) {
     logger.error(`create(): Failed to create ${model}`, error);
-    throw new AppError(`Failed to create ${model}`, (error as Error).message);
+    throw new ServerError(`Failed to create ${model}`, 'product create() method');
   }
 };
 
@@ -34,24 +33,20 @@ const search = async (query: SearchQuery): Promise<IProduct[]> => {
     if (keyword) {
       filter.$or = [
         { name: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } }
+        { description: { $regex: keyword, $options: 'i' } },
       ];
     }
 
     const items = await Model.find(filter);
     logger.info('search(): filter and count', {
       filter,
-      count: items.length
+      count: items.length,
     });
 
     return items;
   } catch (error) {
     logger.error(`search(): Failed to search ${model}`, error);
-    throw new AppError(
-      `Failed to search ${model}`,
-      (error as Error).message,
-      400
-    );
+    throw new ServerError(`Failed to search ${model}`, 'product search() method');
   }
 };
 
@@ -63,21 +58,18 @@ const getById = async (id: string): Promise<IProduct | null> => {
     return item;
   } catch (error) {
     logger.error(`getById(): Failed to get ${model}`, error);
-    throw new AppError(`Failed to get ${model}`, (error as Error).message);
+    throw new ServerError(`Failed to get ${model}`, 'product getById() method');
   }
 };
 
-const updateById = async (
-  id: string,
-  data: Partial<IProduct>
-): Promise<IProduct | null> => {
+const updateById = async (id: string, data: Partial<IProduct>): Promise<IProduct | null> => {
   try {
     const item = await Model.findByIdAndUpdate(id, data, { new: true });
     logger.info(`updateById(): ${model} updated`, { id });
     return item;
   } catch (error) {
     logger.error(`updateById(): Failed to update ${model}`, error);
-    throw new AppError(`Failed to update ${model}`, (error as Error).message);
+    throw new ServerError(`Failed to update ${model}`, 'product updateById() method');
   }
 };
 
@@ -88,8 +80,8 @@ const deleteById = async (id: string): Promise<boolean> => {
     return true;
   } catch (error) {
     logger.error(`deleteById(): Failed to delete ${model}`, error);
-    throw new AppError(`Failed to delete ${model}`, (error as Error).message);
+    throw new ServerError(`Failed to delete ${model}`, 'product deleteById() method');
   }
 };
 
-export { create, search, getById, updateById, deleteById };
+export { create, deleteById, getById, search, updateById };

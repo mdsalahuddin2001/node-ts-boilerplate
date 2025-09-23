@@ -1,48 +1,3 @@
-// import mongoose from 'mongoose';
-// import config from '../../configs';
-// import logger from '../log/logger';
-
-// const connectWithMongoDb = async (): Promise<void> => {
-//   const MONGODB_URI = config.MONGODB_URI as string;
-
-//   logger.info('Connecting to MongoDB...');
-
-//   mongoose.connection.once('open', () => {
-//     logger.info('MongoDB connection is open');
-//   });
-
-//   mongoose.connection.on('error', (error: Error) => {
-//     logger.error('MongoDB connection error', error);
-//   });
-
-//   function setRunValidators() {
-//     return { runValidators: true };
-//   }
-
-//   mongoose.set('strictQuery', true);
-
-//   await mongoose
-//     .plugin((schema) => {
-//       schema.pre('findOneAndUpdate', setRunValidators);
-//       schema.pre('updateMany', setRunValidators);
-//       schema.pre('updateOne', setRunValidators);
-//     })
-//     .connect(MONGODB_URI, {
-//       autoIndex: true,
-//       autoCreate: true
-//     });
-
-//   logger.info('Connected to MongoDB');
-// };
-
-// const disconnectWithMongoDb = async (): Promise<void> => {
-//   logger.info('Disconnecting from MongoDB...');
-//   await mongoose.disconnect();
-//   logger.info('Disconnected from MongoDB');
-// };
-
-// export { connectWithMongoDb, disconnectWithMongoDb };
-
 import mongoose from 'mongoose';
 import config from '../../configs';
 import logger from '../log/logger';
@@ -93,7 +48,7 @@ const connectWithMongoDb = async (): Promise<void> => {
     mongoose.set('strictQuery', true);
 
     await mongoose
-      .plugin((schema) => {
+      .plugin(schema => {
         schema.pre('findOneAndUpdate', setRunValidators);
         schema.pre('updateMany', setRunValidators);
         schema.pre('updateOne', setRunValidators);
@@ -104,7 +59,7 @@ const connectWithMongoDb = async (): Promise<void> => {
         maxPoolSize: 25,
         minPoolSize: 10,
         socketTimeoutMS: 45000,
-        connectTimeoutMS: 10000
+        connectTimeoutMS: 10000,
       });
 
     logger.info('Successfully connected to MongoDB');
@@ -136,12 +91,10 @@ const getConnectionStatus = (): string => {
     0: 'disconnected',
     1: 'connected',
     2: 'connecting',
-    3: 'disconnecting'
+    3: 'disconnecting',
   };
 
-  return (
-    states[mongoose.connection.readyState as keyof typeof states] || 'unknown'
-  );
+  return states[mongoose.connection.readyState as keyof typeof states] || 'unknown';
 };
 
 // Graceful shutdown handler

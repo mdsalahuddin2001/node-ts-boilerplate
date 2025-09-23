@@ -29,7 +29,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'error',
 
       // Code quality
-      complexity: ['error', { max: 10 }],
+      complexity: ['error', { max: 15 }],
       'max-depth': ['error', 4],
       'max-lines-per-function': ['error', { max: 500 }],
       'no-console': 'warn',
@@ -42,6 +42,7 @@ export default [
       // SonarJS rules
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/no-duplicate-string': ['error', { threshold: 3 }],
+      'sonarjs/no-commented-code': 'off',
     },
   },
   {

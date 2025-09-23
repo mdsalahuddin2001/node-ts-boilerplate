@@ -1,81 +1,89 @@
-import logger from '../log/logger';
-import { inspect } from 'util';
-import { AppError } from './AppError';
-import { Server } from 'http';
+import { StatusCodes } from 'http-status-codes';
 
-let httpServerRef: Server | null;
+export interface IErrorResponse {
+  message: string;
+  statusCode: number;
+  status: string;
+  comingFrom: string;
+  serializeErrors(): IError;
+}
 
-const errorHandler = {
-  listenToErrorEvents: (): void => {
-    process.on('uncaughtException', async (error: unknown) => {
-      await errorHandler.handleError(error);
-    });
+export interface IError {
+  message: string;
+  statusCode: number;
+  status: string;
+  comingFrom: string;
+}
 
-    process.on('unhandledRejection', async (reason: unknown) => {
-      await errorHandler.handleError(reason);
-    });
+export abstract class AppError extends Error {
+  abstract statusCode: number;
+  abstract status: string;
+  comingFrom: string;
 
-    process.on('SIGTERM', async () => {
-      logger.error(
-        'App received SIGTERM event, try to gracefully close the server'
-      );
-      await terminateHttpServerAndExit();
-    });
-
-    process.on('SIGINT', async () => {
-      logger.error(
-        'App received SIGINT event, try to gracefully close the server'
-      );
-      await terminateHttpServerAndExit();
-    });
-  },
-
-  handleError: async (errorToHandle: unknown): Promise<void> => {
-    try {
-      const appError: AppError = normalizeError(errorToHandle);
-      logger.error(appError.message, appError);
-
-      if (!appError.isTrusted) {
-        await terminateHttpServerAndExit();
-      }
-    } catch (handlingError) {
-      // No logger here since it might have failed
-      process.stdout.write(
-        'The error handler failed. Here are the handler failure and then the origin error that it tried to handle: '
-      );
-      process.stdout.write(JSON.stringify(handlingError));
-      process.stdout.write(JSON.stringify(errorToHandle));
-    }
-  }
-};
-
-const terminateHttpServerAndExit = async (): Promise<void> => {
-  if (httpServerRef) {
-    await new Promise<void>((resolve) => {
-      httpServerRef!.close(() => resolve()); // Graceful shutdown
-    });
-    httpServerRef = null;
-  }
-  process.exit();
-};
-
-const normalizeError = (errorToHandle: unknown): AppError => {
-  if (errorToHandle instanceof AppError) {
-    return errorToHandle;
-  }
-  if (errorToHandle instanceof Error) {
-    const appError = new AppError(errorToHandle.name, errorToHandle.message);
-    appError.stack = errorToHandle.stack;
-    return appError;
+  constructor(message: string, comingFrom: string) {
+    super(message);
+    this.comingFrom = comingFrom;
   }
 
-  const inputType = typeof errorToHandle;
-  return new AppError(
-    'general-error',
-    `Error Handler received a non-error instance with type - ${inputType}, value - ${inspect(
-      errorToHandle
-    )}`
-  );
-};
+  serializeErrors(): IError {
+    return {
+      message: this.message,
+      statusCode: this.statusCode,
+      status: this.status,
+      comingFrom: this.comingFrom,
+    };
+  }
+}
 
-export { errorHandler };
+export class BadRequestError extends AppError {
+  statusCode = StatusCodes.BAD_REQUEST;
+  status = 'error';
+
+  constructor(message: string, comingFrom: string) {
+    super(message, comingFrom);
+  }
+}
+
+export class NotFoundError extends AppError {
+  statusCode = StatusCodes.NOT_FOUND;
+  status = 'error';
+
+  constructor(message: string, comingFrom: string) {
+    super(message, comingFrom);
+  }
+}
+
+export class NotAuthorizedError extends AppError {
+  statusCode = StatusCodes.UNAUTHORIZED;
+  status = 'error';
+
+  constructor(message: string, comingFrom: string) {
+    super(message, comingFrom);
+  }
+}
+
+export class FileTooLargeError extends AppError {
+  statusCode = StatusCodes.REQUEST_TOO_LONG;
+  status = 'error';
+
+  constructor(message: string, comingFrom: string) {
+    super(message, comingFrom);
+  }
+}
+
+export class ServerError extends AppError {
+  statusCode = StatusCodes.SERVICE_UNAVAILABLE;
+  status = 'error';
+
+  constructor(message: string, comingFrom: string) {
+    super(message, comingFrom);
+  }
+}
+
+export interface ErrnoException extends Error {
+  errno?: number;
+  code?: string;
+  path?: string;
+  syscall?: string;
+  stack?: string;
+}
