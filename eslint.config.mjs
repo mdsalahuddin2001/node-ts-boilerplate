@@ -43,6 +43,7 @@ export default [
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/no-duplicate-string': ['error', { threshold: 3 }],
       'sonarjs/no-commented-code': 'off',
+      'sonarjs/todo-tag': 'off',
     },
   },
   {

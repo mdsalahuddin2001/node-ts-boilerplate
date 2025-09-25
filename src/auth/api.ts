@@ -1,11 +1,11 @@
 import express, { NextFunction, Request, Response } from 'express';
 
 import { create } from '@/domains/user/service';
-import { createUserSchema } from '@/domains/user/validations';
+import { createUserSchema } from '@/domains/user/validation';
 import logger from '@/libraries/log/logger';
 import { successResponse } from '@/libraries/utils/sendResponse';
 import { validateBody } from '@/middlewares/request-validate';
-import { loginSchema } from './validations';
+import { loginSchema } from './validation';
 import passport from 'passport';
 import { loginUser, refresh } from './service';
 import { setAuthCookies } from '@/libraries/utils/cookies';
