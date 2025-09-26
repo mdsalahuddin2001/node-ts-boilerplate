@@ -72,7 +72,7 @@ export class FileTooLargeError extends AppError {
 }
 
 export class ServerError extends AppError {
-  statusCode = StatusCodes.SERVICE_UNAVAILABLE;
+  statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
   status = 'error';
 
   constructor(message: string, comingFrom: string) {

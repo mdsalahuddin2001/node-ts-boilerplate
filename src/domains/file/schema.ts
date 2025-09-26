@@ -1,35 +1,26 @@
 // src/domains/file/schema.ts
 import mongoose, { Model, Schema } from 'mongoose';
 import { baseSchema } from '@/libraries/db/base-schema';
+import configs from '@/configs';
 
 export interface IFile {
-  _id: string;
-  originalName: string;
-  fileName: string;
+  _id?: string;
+  filename: string;
   mimeType: string;
   size: number;
   key: string;
-  bucker: string;
-  url: string;
   uploadedBy?: string;
   metadata?: Record<string, string | number | boolean>;
-  isPublic: boolean;
-  tags?: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const fileSchema = new Schema({
-  originalName: {
+  filename: {
     type: String,
     required: true,
     trim: true,
-  },
-  fileName: {
-    type: String,
-    required: true,
-    trim: true,
-    unique: true,
+    unique: false,
   },
   mimeType: {
     type: String,
@@ -45,14 +36,6 @@ const fileSchema = new Schema({
     required: true,
     unique: true,
   },
-  bucker: {
-    type: String,
-    required: true,
-  },
-  url: {
-    type: String,
-    required: true,
-  },
   uploadedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -61,26 +44,22 @@ const fileSchema = new Schema({
     type: Schema.Types.Mixed,
     default: {},
   },
-  isPublic: {
-    type: Boolean,
-    default: false,
-  },
-  tags: [
-    {
-      type: String,
-      trim: true,
-    },
-  ],
 });
 
 fileSchema.add(baseSchema);
 // Indexes
-fileSchema.index({ fileName: 1 });
-fileSchema.index({ mimeType: 1 });
+
 fileSchema.index({ uploadedBy: 1 });
-fileSchema.index({ tags: 1 });
 fileSchema.index({ createdAt: -1 });
 fileSchema.index({ key: 1 }, { unique: true });
+
+fileSchema.virtual('url').get(function () {
+  const baseUrl = `https://${configs.AWS_S3_BUCKET}.s3.${configs.AWS_S3_REGION}.amazonaws.com`;
+  return `${baseUrl}/${this.key}`;
+});
+
+fileSchema.set('toJSON', { virtuals: true });
+fileSchema.set('toObject', { virtuals: true });
 
 const FileModel: Model<IFile> = mongoose.model<IFile>('File', fileSchema);
 
