@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import logger from '../../libraries/log/logger';
-import { create, search, getById, updateById, deleteById } from './service';
+import { create } from './service';
 
 // import { createSchema, updateSchema, idSchema } from './request';
 // import { validateRequest } from '../../middlewares/request-validate';
@@ -14,10 +14,9 @@ const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
 
-  router.get('/', logRequest({}), async (req: Request, res: Response, next: NextFunction) => {
+  router.get('/', logRequest({}), async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const items = await search(req.query);
-      res.json(items);
+      res.json({});
     } catch (error) {
       next(error);
     }
@@ -41,8 +40,8 @@ const routes = (): express.Router => {
     '/:id',
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
-    async (req: Request, res: Response, _next: NextFunction) => {
-      const item = await getById(req.params.id);
+    async (_req: Request, res: Response, _next: NextFunction) => {
+      const item = null;
       if (!item) {
         throw new NotFoundError(`${model} not found`, `domain/product/api.ts - /:id`);
       }
@@ -55,9 +54,9 @@ const routes = (): express.Router => {
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     // validateRequest({ schema: updateSchema }),
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (_req: Request, res: Response, next: NextFunction) => {
       try {
-        const item = await updateById(req.params.id, req.body);
+        const item = null;
         if (!item) {
           throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PUT /:id`);
         }
@@ -72,9 +71,9 @@ const routes = (): express.Router => {
     '/:id',
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (_req: Request, res: Response, next: NextFunction) => {
       try {
-        await deleteById(req.params.id);
+        // await deleteById(req.params.id);
         res.status(204).json({ message: `${model} is deleted` });
       } catch (error) {
         next(error);
