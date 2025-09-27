@@ -1,4 +1,5 @@
 import http from 'http';
+import qs from 'qs';
 import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -60,6 +61,7 @@ const securityMiddleware = (app: Application): void => {
 };
 /* ------ Standard Middlewares ----- */
 const standardMiddleware = (app: Application): void => {
+  app.set('query parser', (str: string) => qs.parse(str));
   app.use(
     compression({
       filter: (_req, res) => {

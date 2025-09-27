@@ -64,9 +64,19 @@ function buildPagination(query: QueryParams): Record<string, number> {
 
 function parseValue(val: any): any {
   if (Array.isArray(val)) return val.map(parseValue);
+
+  // Convert numbers
   if (!isNaN(val) && val !== '') return Number(val);
+
+  // Convert booleans
   if (val === 'true') return true;
   if (val === 'false') return false;
+
+  // Convert ISO date strings
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(val)) {
+    return new Date(val);
+  }
+
   return val;
 }
 

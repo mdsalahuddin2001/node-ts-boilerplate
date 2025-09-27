@@ -1,4 +1,18 @@
 import { Response } from 'express';
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  startIndex: number;
+  endIndex: number;
+}
+export interface PaginatedData<T> {
+  items: T[];
+  pagination: PaginationInfo;
+}
 
 const errorResponse = (
   res: Response,
@@ -39,6 +53,7 @@ const successResponse = (
     data,
   });
 };
+
 const paginatedSuccessResponse = (
   res: Response,
   {
@@ -48,7 +63,7 @@ const paginatedSuccessResponse = (
       items: [],
       pagination: {},
     },
-  }: { statusCode?: number; message?: string; data?: { items: unknown; pagination: unknown } }
+  }: { statusCode?: number; message?: string; data?: PaginatedData<any> | any }
 ): Response => {
   return res.status(statusCode).json({
     success: true,

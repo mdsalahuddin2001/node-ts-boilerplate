@@ -1,5 +1,5 @@
 // utils/query/aggregateWithPagination.ts
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { buildQuery } from './buildQuery';
 
 interface AggregateResult<T> {
@@ -21,11 +21,13 @@ interface AggregateResult<T> {
 export async function aggregateWithPagination<T>(
   model: Model<T>,
   query: Record<string, any>,
-  searchFields: string[] = []
+  searchFields: string[] = [],
+  pipelines: PipelineStage[] = []
 ): Promise<AggregateResult<T>> {
   const { pipeline, pagination } = buildQuery(query, searchFields);
+  console.log('pipeline', JSON.stringify(pipeline));
 
-  const result = await model.aggregate(pipeline);
+  const result = await model.aggregate([...pipelines, ...pipeline]);
   const items = result[0]?.items || [];
   const totalItems = result[0]?.totalCount[0]?.count || 0;
 

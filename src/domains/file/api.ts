@@ -9,11 +9,18 @@ import { upload } from '@/middlewares/upload';
 import { uploadToS3 } from '@/libraries/aws/s3';
 import { create } from './service';
 import { generateFileName } from '@/libraries/utils/string';
-import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import FileModel from './schema';
-import { aggregateWithPagination } from '@/libraries/query/aggregateWithPagination';
+import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
+// import { aggregateWithPagination } from '@/libraries/query/aggregateWithPagination';
+// import { PipelineStage } from 'mongoose';
+import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 
 const model: string = 'Product';
+
+const queryBuilder = new QueryBuilder({
+  searchFields: ['filename', 'mimeType'],
+  sortableFields: ['filename', 'key', 'mimeType', 'createdAt'],
+});
 
 // CRUD for entity
 const routes = (): express.Router => {
@@ -21,8 +28,29 @@ const routes = (): express.Router => {
   logger.info(`Setting up routes for ${model}`);
 
   router.get('/', async (req: Request, res: Response) => {
-    const data = await aggregateWithPagination(FileModel, req.query, ['filename', 'mimeType']);
+    const data = await queryBuilder.query(FileModel, req.query).paginate().lean().execute();
+
     paginatedSuccessResponse(res, { data });
+
+    // const pipeline: PipelineStage[] = [
+    //   {
+    //     $addFields: {
+    //       url: {
+    //         $concat: [
+    //           'https://your-bucket.s3.amazonaws.com/', // Your base URL
+    //           '$key',
+    //         ],
+    //       },
+    //     },
+    //   },
+    // ];
+    // const data = await aggregateWithPagination(
+    //   FileModel,
+    //   req.query,
+    //   ['filename', 'mimeType', 'createdAt'],
+    //   pipeline
+    // );
+    // paginatedSuccessResponse(res, { data });
   });
 
   router.post(
