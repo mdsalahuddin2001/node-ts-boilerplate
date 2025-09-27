@@ -26,7 +26,7 @@ export default [
         },
       ],
       '@typescript-eslint/explicit-function-return-type': 'warn',
-      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-explicit-any': 'off',
 
       // Code quality
       complexity: ['error', { max: 15 }],

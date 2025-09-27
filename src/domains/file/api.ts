@@ -9,8 +9,9 @@ import { upload } from '@/middlewares/upload';
 import { uploadToS3 } from '@/libraries/aws/s3';
 import { create } from './service';
 import { generateFileName } from '@/libraries/utils/string';
-import { successResponse } from '@/libraries/utils/sendResponse';
+import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import FileModel from './schema';
+import { aggregateWithPagination } from '@/libraries/query/aggregateWithPagination';
 
 const model: string = 'Product';
 
@@ -19,9 +20,9 @@ const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
 
-  router.get('/', async (_req: Request, res: Response) => {
-    const data = await FileModel.find();
-    successResponse(res, { data });
+  router.get('/', async (req: Request, res: Response) => {
+    const data = await aggregateWithPagination(FileModel, req.query, ['filename', 'mimeType']);
+    paginatedSuccessResponse(res, { data });
   });
 
   router.post(

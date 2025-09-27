@@ -39,4 +39,23 @@ const successResponse = (
     data,
   });
 };
-export { errorResponse, successResponse };
+const paginatedSuccessResponse = (
+  res: Response,
+  {
+    statusCode = 200,
+    message = 'success',
+    data = {
+      items: [],
+      pagination: {},
+    },
+  }: { statusCode?: number; message?: string; data?: { items: unknown; pagination: unknown } }
+): Response => {
+  return res.status(statusCode).json({
+    success: true,
+    message,
+    data: data.items,
+    pagination: data.pagination,
+  });
+};
+
+export { errorResponse, successResponse, paginatedSuccessResponse };
