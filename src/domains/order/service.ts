@@ -1,9 +1,11 @@
 import logger from '@/libraries/log/logger';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
-import Model, { IProduct } from './schema';
+import Model, { IOrder } from './schema';
 import { BadRequestError } from '@/libraries/error-handling';
+import { OrderInput } from './validation';
+import ProductModel from '../product/schema';
 
-const model: string = 'Product';
+const model: string = 'Order';
 
 interface IData {
   [key: string]: any;
@@ -16,13 +18,47 @@ const queryBuilder = new QueryBuilder({
   defaultSort: 'createdAt',
 });
 
-const create = async (data: IData): Promise<any> => {
-  const item = new Model(data);
-  const saved = await item.save();
-  logger.info(`create(): ${model} created`, {
-    id: saved._id,
+const create = async (orderData: OrderInput): Promise<any> => {
+  const { items } = orderData;
+  const productIds = items.map(i => i.product);
+  const products = await ProductModel.find({ _id: { $in: productIds } })
+    .select('name price stockQuantity')
+    .lean();
+  const productMap = new Map(products.map(p => [p._id.toString(), p]));
+  let subtotal = 0;
+  const populatedItems = [];
+  for (const item of items) {
+    const productDoc = productMap.get(item.product.toString());
+    if (!productDoc)
+      throw new BadRequestError(`Invalid product ID: ${item.product}`, 'create() order method');
+
+    // ✅ Stock check
+    if (productDoc.stockQuantity < item.quantity) {
+      throw new BadRequestError(
+        `Product "${productDoc.name}" is out of stock or not enough quantity available`,
+        'create() order method'
+      );
+    }
+
+    const total = productDoc.price * item.quantity;
+    subtotal += total;
+
+    populatedItems.push({
+      product: productDoc._id,
+      name: productDoc.name,
+      price: productDoc.price,
+      quantity: item.quantity,
+      total,
+    });
+  }
+
+  const order = await Model.create({
+    ...orderData,
+    items: populatedItems,
+    subtotal,
+    total: subtotal + 0,
   });
-  return saved;
+  return order;
 };
 
 interface SearchQuery {
@@ -58,7 +94,7 @@ const updateById = async (id: string, data: IData): Promise<any> => {
   }
 };
 
-const deleteById = async (id: string): Promise<IProduct | null> => {
+const deleteById = async (id: string): Promise<IOrder | null> => {
   const deletedItem = await Model.findByIdAndDelete(id);
   if (!deletedItem) {
     logger.error(`deleteById(): Failed to delete model`, { id });

@@ -24,7 +24,7 @@ const routes = (): express.Router => {
   });
 
   /*
-  [POST] /api/v1/products - Create a Product - Admin
+  [POST] /api/v1/orders - Create an Order - Public
   */
   router.post(
     '/',

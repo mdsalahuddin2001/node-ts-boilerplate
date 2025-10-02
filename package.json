@@ -23,7 +23,7 @@
     "lint:fix": "eslint src test --ext .ts,.js --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\" \"test/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"test/**/*.{ts,js,json}\"",
-    "create-domain": "ts-node scripts/dev/domain-generator.ts",
+    "create-domain": "zx scripts/dev/domain-generator.js",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "prepare": "husky",

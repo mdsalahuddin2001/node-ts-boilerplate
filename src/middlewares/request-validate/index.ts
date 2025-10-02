@@ -21,6 +21,7 @@ interface ValidatedRequest extends Request {
 
 // Main validation middleware
 export const validateRequest = (schemas: ValidationSchemas) => {
+  // eslint-disable-next-line complexity
   return (req: Request, res: Response, next: NextFunction): void => {
     const validatedReq = req as ValidatedRequest;
     validatedReq.validatedData = {};
@@ -28,33 +29,33 @@ export const validateRequest = (schemas: ValidationSchemas) => {
     try {
       // Validate request body
       if (schemas.body) {
-        validatedReq.validatedData.body = schemas.body.parse(req.body);
+        validatedReq.validatedData.body = schemas.body.parse(req.body || {});
       }
 
       // Validate query parameters
       if (schemas.query) {
-        validatedReq.validatedData.query = schemas.query.parse(req.query);
+        validatedReq.validatedData.query = schemas.query.parse(req.query || {});
       }
 
       // Validate route parameters
       if (schemas.params) {
-        validatedReq.validatedData.params = schemas.params.parse(req.params);
+        validatedReq.validatedData.params = schemas.params.parse(req.params || {});
       }
 
       next();
     } catch (error) {
       if (error instanceof ZodError) {
         const errorsTree = z.treeifyError(error);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const errorObj = (errorsTree as any)?.properties;
 
+        const errorObj = (errorsTree as any)?.properties;
         errorResponse(res, {
-          message: 'Validation Failed',
+          message: JSON.parse(error?.message || '[]')?.[0]?.message || 'Validation Failed',
           statusCode: 400,
           status: 'error',
           errors: errorObj,
           comingFrom: 'requestValidate middleware: error instanceof ZodError',
         });
+        return;
       }
 
       // Handle async validation errors
@@ -66,6 +67,7 @@ export const validateRequest = (schemas: ValidationSchemas) => {
           message: error.message,
           comingFrom: 'requestValidate middleware: error instanceof Error',
         });
+        return;
       }
 
       logger.error('Validation middleware error:', error);
@@ -75,6 +77,7 @@ export const validateRequest = (schemas: ValidationSchemas) => {
         message: 'Internal server error during validation',
         comingFrom: 'requestValidate middleware: fallback',
       });
+      return;
     }
   };
 };

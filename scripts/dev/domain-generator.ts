@@ -11,9 +11,9 @@ const createDomain = async (domainName: string): Promise<void> => {
     $`touch ${domainName}/api.ts`,
     $`touch ${domainName}/event.ts`,
     $`touch ${domainName}/index.ts`,
-    $`touch ${domainName}/request.ts`,
+    $`touch ${domainName}/validation.ts`,
     $`touch ${domainName}/schema.ts`,
-    $`touch ${domainName}/service.ts`
+    $`touch ${domainName}/service.ts`,
   ]);
 };
 
@@ -21,9 +21,7 @@ const createDomain = async (domainName: string): Promise<void> => {
 const main = async (): Promise<void> => {
   console.log('Enter the domain name:');
 
-  const domainName: string = (
-    await $`read domainName && echo $domainName`
-  ).stdout.trim();
+  const domainName: string = (await $`read domainName && echo $domainName`).stdout.trim();
   console.log(`Creating domain ${domainName}`);
   // Create the domain
   await createDomain(domainName);

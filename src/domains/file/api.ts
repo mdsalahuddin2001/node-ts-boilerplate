@@ -26,8 +26,12 @@ const queryBuilder = new QueryBuilder({
 const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
-
+  /* =======================================
+     [GET] /api/v1/files
+     Description here
+     ======================================= */
   router.get('/', async (req: Request, res: Response) => {
+    console.log('req..qery', req.query);
     const data = await queryBuilder.query(FileModel, req.query).paginate().lean().execute();
 
     paginatedSuccessResponse(res, { data });
