@@ -12,8 +12,9 @@ export interface IProduct extends Document {
   reviewCount?: number;
   price: number;
   stockQuantity: number;
+  thumbnail: { type: mongoose.Schema.Types.ObjectId; ref: 'File' };
+  gallery: [{ type: mongoose.Schema.Types.ObjectId; ref: 'File' }];
   status: 'active' | 'inactive';
-  deliveryZone: 'outside_dhaka' | 'inside_dhaka';
 }
 
 // Create the schema with TypeScript
@@ -28,7 +29,8 @@ const productSchema = new Schema<IProduct>({
   reviewCount: { type: Number, default: 0 },
   stockQuantity: { type: Number, default: 0 },
   status: { type: String, default: 'active', enum: ['active', 'inactive'] },
-  deliveryZone: { type: String, required: true, enum: ['outside_dhaka', 'inside_dhaka'] },
+  thumbnail: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
+  gallery: [{ type: mongoose.Schema.Types.ObjectId, ref: 'File' }],
 });
 
 // Add the base schema properties

@@ -13,7 +13,7 @@ const queryBuilder = new QueryBuilder({
   searchFields: ['name', 'description'],
   sortableFields: ['name', 'createdAt', 'price', 'rating'],
   filterableFields: ['name', 'createdAt'],
-  defaultSort: 'createdAt',
+  defaultSort: '-createdAt',
 });
 
 const create = async (data: IData): Promise<any> => {
@@ -36,8 +36,8 @@ const search = async (query: SearchQuery) => {
   const data = await queryBuilder
     .query(Model, query)
     .paginate()
-    .populate('category')
-    .lean()
+    .populate(['category', 'thumbnail'])
+    // .where({ stockQuantity: { $gt: 0 } })
     .execute();
   return data;
 };

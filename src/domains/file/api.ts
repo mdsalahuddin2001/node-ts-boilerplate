@@ -57,8 +57,11 @@ const routes = (): express.Router => {
     // paginatedSuccessResponse(res, { data });
   });
 
+  /*
+  [POST] /api/v1/upload-image-single - Description here - Private
+  */
   router.post(
-    '/upload-single-any',
+    '/upload-image-single',
     logRequest({}),
     upload({ allowMultiple: false, fieldName: 'file' }),
     // validateRequest({ schema: createSchema }),
@@ -87,6 +90,59 @@ const routes = (): express.Router => {
         // @TODO: Implement Delete File From S3
         logger.error('File Upload Request Failed', error);
         throw new ServerError('File Upload Request Failed', '/single any catch block');
+      }
+    }
+  );
+
+  /*
+  [POST] /api/v1/upload-image-multiple - Description here - Private
+  */
+  router.post(
+    '/upload-image-multiple',
+    logRequest({}),
+    upload({ allowMultiple: true, fieldName: 'files' }),
+    async (req: Request, res: Response, _next: NextFunction) => {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        logger.error('No files uploaded', req.files);
+        throw new BadRequestError(
+          'No files uploaded',
+          'domain/file/api.ts - POST /upload-image-multiple'
+        );
+      }
+
+      try {
+        const results = await Promise.all(
+          files.map(async file => {
+            const key = generateFileName(file.originalname);
+            const uploadParams = {
+              key,
+              body: file.buffer,
+              contentType: file.mimetype,
+            };
+
+            const result = await uploadToS3(uploadParams);
+
+            const data = await create({
+              filename: file.originalname,
+              key: result.key,
+              size: file.size,
+              mimeType: file.mimetype,
+              // uploadedBy: req.user?._id,
+            });
+
+            return data;
+          })
+        );
+
+        successResponse(res, { data: results });
+      } catch (error) {
+        // @TODO: optionally delete uploaded files from S3 if partial failure
+        logger.error('Multiple File Upload Request Failed', error);
+        throw new ServerError(
+          'Multiple File Upload Request Failed',
+          '/upload-image-multiple catch block'
+        );
       }
     }
   );
