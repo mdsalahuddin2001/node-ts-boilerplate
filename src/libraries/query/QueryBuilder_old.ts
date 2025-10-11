@@ -7,7 +7,6 @@ import { Model, PopulateOptions } from 'mongoose';
  * =============================
  */
 
-// Enhanced type to allow simple string fields or complex Mongoose PopulateOptions objects
 export type PopulateFields = string | string[] | PopulateOptions | PopulateOptions[];
 export type QueryParams = Record<string, any>;
 
@@ -19,6 +18,7 @@ export interface QueryConfig {
   defaultSort?: string;
   defaultLimit?: number;
   maxLimit?: number;
+  enableTextSearch?: boolean;
 }
 
 export type SortOptions = Record<string, 1 | -1>;
@@ -58,8 +58,6 @@ export interface ParsedQuery {
  * =============================
  */
 
-// Helper conditional type for the execute method
-
 export class QueryBuilder {
   private config: Required<QueryConfig>;
   private queryParams: QueryParams = {};
@@ -67,7 +65,13 @@ export class QueryBuilder {
   private populateFields: PopulateOptions[] = [];
   private isLean = false;
   private customSelect?: string;
-  private isPaginated = false; // Flag for fluent execution
+  private projection?: Record<string, 0 | 1>;
+  private isPaginated = false;
+  private indexHint?: string | Record<string, 1 | -1>;
+  private shouldExplain = false;
+  private distinctField?: string;
+  private collation?: any;
+  private customFilters: Record<string, any>[] = [];
 
   constructor(config: QueryConfig = {}) {
     this.config = {
@@ -78,22 +82,26 @@ export class QueryBuilder {
       defaultSort: config.defaultSort || 'createdAt',
       defaultLimit: config.defaultLimit || 20,
       maxLimit: config.maxLimit || 100,
+      enableTextSearch: config.enableTextSearch ?? false,
     };
   }
 
-  query(model: Model<any>, queryParams: QueryParams): this {
+  /**
+   * Initialize a new query chain
+   */
+  query(model: Model<any>, queryParams: QueryParams = {}): this {
     this.model = model;
     this.queryParams = queryParams;
-    // Reset state for a new query chain
-    this.isPaginated = false;
-    this.populateFields = [];
-    this.isLean = false;
-    this.customSelect = undefined;
+    this.reset();
     return this;
   }
 
   /**
-   * Accepts field names (string or string[]) or Mongoose PopulateOptions (object or object[]).
+   * Populate related documents
+   * IMPORTANT: If you need virtuals on populated documents while using lean(),
+   * you must remove lean() or manually add the virtual fields after the query.
+   *
+   * @param fields - Field name(s) or PopulateOptions
    */
   populate(fields: PopulateFields): this {
     if (typeof fields === 'string') {
@@ -112,18 +120,76 @@ export class QueryBuilder {
     return this;
   }
 
+  /**
+   * Enable lean mode (returns plain JS objects instead of Mongoose documents)
+   * WARNING: Virtual fields (including those on populated documents) will NOT be included when using lean().
+   * If you need virtuals, do NOT use lean().
+   *
+   * @param useLean - Enable/disable lean mode
+   */
   lean(useLean = true): this {
     this.isLean = useLean;
     return this;
   }
 
+  /**
+   * Select specific fields (comma-separated string)
+   */
   select(fields: string): this {
     this.customSelect = fields;
     return this;
   }
 
   /**
-   * Sets the builder state to perform a paginated execution when .execute() is called.
+   * Specify field projection ({ field: 1, field2: 0 })
+   */
+  project(fields: Record<string, 0 | 1>): this {
+    this.projection = fields;
+    return this;
+  }
+
+  /**
+   * Add index hint for query optimization
+   */
+  hint(index: string | Record<string, 1 | -1>): this {
+    this.indexHint = index;
+    return this;
+  }
+
+  /**
+   * Add collation for case-insensitive sorting/filtering
+   */
+  withCollation(collation: any): this {
+    this.collation = collation;
+    return this;
+  }
+
+  /**
+   * Get distinct values for a field
+   */
+  distinct(field: string): this {
+    this.distinctField = field;
+    return this;
+  }
+
+  /**
+   * Enable query explanation for debugging
+   */
+  explain(): this {
+    this.shouldExplain = true;
+    return this;
+  }
+
+  /**
+   * Add custom filter conditions
+   */
+  where(filter: Record<string, any>): this {
+    this.customFilters.push(filter);
+    return this;
+  }
+
+  /**
+   * Sets the builder state to perform a paginated execution
    */
   paginate(): this {
     this.isPaginated = true;
@@ -131,18 +197,25 @@ export class QueryBuilder {
   }
 
   /**
-   * The terminal method for query execution.
-   * Executes a standard find (T[]) or a paginated find (PaginatedData<T>)
-   * based on whether .paginate() was called.
-   * * @template T - The type of the document being queried.
-   * @returns A promise resolving to T[] or PaginatedData<T>.
+   * Execute the query and return results
+   * @template T - The type of the document being queried
    */
-  async execute<T = any>(): Promise<T[] | PaginatedData<T>> {
+  async execute<T = any>(): Promise<T[] | PaginatedData<T> | any> {
     this.validateQuery();
+
+    // Handle distinct queries
+    if (this.distinctField) {
+      const { filter } = this.parse();
+      let query = this.model.find(filter).distinct(this.distinctField);
+      if (this.collation) {
+        query = query.collation(this.collation);
+      }
+      return await query;
+    }
+
     const { filter, sort, pagination, select } = this.parse();
 
     if (this.isPaginated) {
-      // Execute the paginated query
       const { items, totalCount } = await this.executeWithPagination<T>(
         filter,
         sort,
@@ -158,33 +231,143 @@ export class QueryBuilder {
           totalCount,
           pagination.skip
         ),
-      } as PaginatedData<T>; // Type assertion for correct return
+      } as PaginatedData<T>;
     } else {
-      // Execute the standard find query
-      let query = this.model.find(filter);
-
-      if (this.customSelect || select.length > 0) {
-        query = query.select(this.customSelect || select.join(' '));
-      }
-
-      if (this.populateFields.length > 0) {
-        query = query.populate(this.populateFields);
-      }
-
-      if (this.isLean) query = query.lean();
-
-      return (await query.sort(sort)) as T[]; // Type assertion for correct return
+      return await this.executeStandardQuery<T>(filter, sort, select);
     }
   }
 
   /**
-   * Returns the parsed query configuration object without executing the query.
+   * Count documents matching the query
+   */
+  async count(): Promise<number> {
+    this.validateQuery();
+    const { filter } = this.parse();
+    return await this.model.countDocuments(filter);
+  }
+
+  /**
+   * Check if any documents exist matching the query
+   */
+  async exists(): Promise<boolean> {
+    this.validateQuery();
+    const { filter } = this.parse();
+    const doc = await this.model.exists(filter);
+    return doc !== null;
+  }
+
+  /**
+   * Find a single document
+   */
+  async findOne<T = any>(): Promise<T | null> {
+    this.validateQuery();
+    const { filter, select } = this.parse();
+
+    let query = this.model.findOne(filter);
+
+    if (this.customSelect || select.length > 0) {
+      query = query.select(this.customSelect || select.join(' '));
+    }
+
+    if (this.projection) {
+      query = query.select(this.projection);
+    }
+
+    if (this.populateFields.length > 0) {
+      query = query.populate(this.populateFields);
+    }
+
+    if (this.isLean) {
+      query = query.lean();
+    }
+
+    if (this.indexHint) {
+      query = query.hint(this.indexHint);
+    }
+
+    if (this.collation) {
+      query = query.collation(this.collation);
+    }
+
+    if (this.shouldExplain) {
+      return (await query.explain()) as any;
+    }
+
+    return await query;
+  }
+
+  /**
+   * Returns the parsed query configuration without executing
    */
   getQuery(): ParsedQuery {
     return this.parse();
   }
 
-  // ---------------- INTERNAL METHODS ---------------- //
+  /**
+   * Get the raw filter object
+   */
+  getFilter(): Record<string, any> {
+    const filter = this.buildFilter();
+    const searchConditions = this.buildSearch();
+    return this.combineFilterAndSearch(filter, searchConditions);
+  }
+
+  // ============================================
+  // PRIVATE METHODS
+  // ============================================
+
+  private reset(): void {
+    this.isPaginated = false;
+    this.populateFields = [];
+    this.isLean = false;
+    this.customSelect = undefined;
+    this.projection = undefined;
+    this.indexHint = undefined;
+    this.shouldExplain = false;
+    this.distinctField = undefined;
+    this.collation = undefined;
+    this.customFilters = [];
+  }
+
+  private async executeStandardQuery<T>(
+    filter: Record<string, any>,
+    sort: SortOptions,
+    select: string[]
+  ): Promise<T[]> {
+    let query = this.model.find(filter);
+
+    if (this.customSelect || select.length > 0) {
+      query = query.select(this.customSelect || select.join(' '));
+    }
+
+    if (this.projection) {
+      query = query.select(this.projection);
+    }
+
+    if (this.populateFields.length > 0) {
+      query = query.populate(this.populateFields);
+    }
+
+    if (this.isLean) {
+      query = query.lean();
+    }
+
+    if (this.indexHint) {
+      query = query.hint(this.indexHint);
+    }
+
+    if (this.collation) {
+      query = query.collation(this.collation);
+    }
+
+    query = query.sort(sort);
+
+    if (this.shouldExplain) {
+      return (await query.explain()) as any;
+    }
+
+    return await query;
+  }
 
   private async executeWithPagination<T>(
     filter: Record<string, any>,
@@ -198,11 +381,36 @@ export class QueryBuilder {
       query = query.select(this.customSelect || select.join(' '));
     }
 
+    if (this.projection) {
+      query = query.select(this.projection);
+    }
+
     if (this.populateFields.length > 0) {
       query = query.populate(this.populateFields);
     }
 
-    if (this.isLean) query = query.lean();
+    if (this.isLean) {
+      query = query.lean();
+    }
+
+    if (this.indexHint) {
+      query = query.hint(this.indexHint);
+    }
+
+    if (this.collation) {
+      query = query.collation(this.collation);
+    }
+
+    if (this.shouldExplain) {
+      return {
+        items: (await query
+          .sort(sort)
+          .skip(pagination.skip)
+          .limit(pagination.limit)
+          .explain()) as any,
+        totalCount: 0,
+      };
+    }
 
     const [items, totalCount] = await Promise.all([
       query.sort(sort).skip(pagination.skip).limit(pagination.limit),
@@ -217,8 +425,13 @@ export class QueryBuilder {
     const searchConditions = this.buildSearch();
     const combinedFilter = this.combineFilterAndSearch(filter, searchConditions);
 
+    const finalFilter =
+      this.customFilters.length > 0
+        ? { $and: [combinedFilter, ...this.customFilters] }
+        : combinedFilter;
+
     return {
-      filter: combinedFilter,
+      filter: finalFilter,
       sort: this.buildSort(),
       pagination: this.buildPagination(),
       select: this.buildSelect(),
@@ -232,7 +445,7 @@ export class QueryBuilder {
 
     for (const key in this.queryParams) {
       if (reservedParams.includes(key)) continue;
-      // Filter out non-whitelisted fields if filterableFields is configured
+
       if (this.config.filterableFields.length > 0 && !this.config.filterableFields.includes(key))
         continue;
 
@@ -249,6 +462,8 @@ export class QueryBuilder {
           in: '$in',
           nin: '$nin',
           eq: '$eq',
+          regex: '$regex',
+          exists: '$exists',
         };
 
         for (const op in value) {
@@ -257,6 +472,7 @@ export class QueryBuilder {
             conditions[mongoOp] = this.parseValue(value[op]);
           }
         }
+
         if (Object.keys(conditions).length > 0) {
           filter[key] = conditions;
         }
@@ -269,7 +485,22 @@ export class QueryBuilder {
   }
 
   private buildSearch(): Record<string, any> {
-    if (!this.queryParams.search || this.config.searchFields.length === 0) return {};
+    if (!this.queryParams.search) return {};
+
+    // Use MongoDB text search if enabled and available
+    if (this.config.enableTextSearch) {
+      const textIndexes = this.model.schema
+        .indexes()
+        .filter(([fields]) => Object.values(fields).some(val => val === 'text'));
+
+      if (textIndexes.length > 0) {
+        return { $text: { $search: this.queryParams.search } };
+      }
+    }
+
+    // Fallback to regex search
+    if (this.config.searchFields.length === 0) return {};
+
     // eslint-disable-next-line security/detect-non-literal-regexp
     const regex = new RegExp(this.queryParams.search, 'i');
     return { $or: this.config.searchFields.map(field => ({ [field]: regex })) };
@@ -347,6 +578,7 @@ export class QueryBuilder {
     if (value === 'true') return true;
     if (value === 'false') return false;
     if (value === 'null') return null;
+    if (value === 'undefined') return undefined;
     if (value !== '' && !isNaN(Number(value))) return Number(value);
     if (value.includes(',')) return value.split(',').map(v => this.parseValue(v.trim()));
     return value;
@@ -357,8 +589,43 @@ export class QueryBuilder {
   }
 
   private validateQuery(): void {
+    if (!this.model) {
+      throw new Error('Model not initialized. Call .query(model, params) first.');
+    }
+
     if (this.queryParams.limit && Number(this.queryParams.limit) > this.config.maxLimit) {
-      throw new Error(`Limit exceeds maximum: ${this.config.maxLimit}`);
+      throw new Error(`Limit exceeds maximum allowed: ${this.config.maxLimit}`);
+    }
+
+    // Validate populate paths exist in schema
+    if (this.populateFields.length > 0) {
+      const schema = this.model.schema;
+      this.populateFields.forEach(pop => {
+        const path = typeof pop === 'string' ? pop : pop.path;
+        if (path && !schema.path(path) && !schema.virtualpath(path)) {
+          console.warn(`[QueryBuilder] Warning: Populate path '${path}' not found in schema`);
+        }
+      });
+    }
+
+    // Validate sort fields
+    if (this.config.sortableFields.length > 0 && this.queryParams.sort) {
+      const sortFields = this.queryParams.sort
+        .split(',')
+        .map((f: string) => f.replace('-', '').trim());
+      const invalidFields = sortFields.filter(
+        (f: string) => !this.config.sortableFields.includes(f)
+      );
+      if (invalidFields.length > 0) {
+        console.warn(`[QueryBuilder] Warning: Invalid sort fields: ${invalidFields.join(', ')}`);
+      }
     }
   }
+}
+
+/**
+ * Factory function for creating QueryBuilder instances
+ */
+export function createQueryBuilder(config?: QueryConfig): QueryBuilder {
+  return new QueryBuilder(config);
 }

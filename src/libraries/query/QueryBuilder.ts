@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 /* eslint-disable security/detect-object-injection */
 import { Model, PopulateOptions } from 'mongoose';
 
@@ -19,6 +20,7 @@ export interface QueryConfig {
   defaultLimit?: number;
   maxLimit?: number;
   enableTextSearch?: boolean;
+  queryTimeout?: number;
 }
 
 export type SortOptions = Record<string, 1 | -1>;
@@ -68,8 +70,6 @@ export class QueryBuilder {
   private projection?: Record<string, 0 | 1>;
   private isPaginated = false;
   private indexHint?: string | Record<string, 1 | -1>;
-  private shouldExplain = false;
-  private distinctField?: string;
   private collation?: any;
   private customFilters: Record<string, any>[] = [];
 
@@ -83,6 +83,7 @@ export class QueryBuilder {
       defaultLimit: config.defaultLimit || 20,
       maxLimit: config.maxLimit || 100,
       enableTextSearch: config.enableTextSearch ?? false,
+      queryTimeout: config.queryTimeout || 30000,
     };
   }
 
@@ -165,22 +166,6 @@ export class QueryBuilder {
   }
 
   /**
-   * Get distinct values for a field
-   */
-  distinct(field: string): this {
-    this.distinctField = field;
-    return this;
-  }
-
-  /**
-   * Enable query explanation for debugging
-   */
-  explain(): this {
-    this.shouldExplain = true;
-    return this;
-  }
-
-  /**
    * Add custom filter conditions
    */
   where(filter: Record<string, any>): this {
@@ -200,18 +185,8 @@ export class QueryBuilder {
    * Execute the query and return results
    * @template T - The type of the document being queried
    */
-  async execute<T = any>(): Promise<T[] | PaginatedData<T> | any> {
+  async execute<T = any>(): Promise<T[] | PaginatedData<T>> {
     this.validateQuery();
-
-    // Handle distinct queries
-    if (this.distinctField) {
-      const { filter } = this.parse();
-      let query = this.model.find(filter).distinct(this.distinctField);
-      if (this.collation) {
-        query = query.collation(this.collation);
-      }
-      return await query;
-    }
 
     const { filter, sort, pagination, select } = this.parse();
 
@@ -243,7 +218,7 @@ export class QueryBuilder {
   async count(): Promise<number> {
     this.validateQuery();
     const { filter } = this.parse();
-    return await this.model.countDocuments(filter);
+    return await this.model.countDocuments(filter).maxTimeMS(this.config.queryTimeout);
   }
 
   /**
@@ -252,7 +227,7 @@ export class QueryBuilder {
   async exists(): Promise<boolean> {
     this.validateQuery();
     const { filter } = this.parse();
-    const doc = await this.model.exists(filter);
+    const doc = await this.model.exists(filter).maxTimeMS(this.config.queryTimeout);
     return doc !== null;
   }
 
@@ -263,7 +238,7 @@ export class QueryBuilder {
     this.validateQuery();
     const { filter, select } = this.parse();
 
-    let query = this.model.findOne(filter);
+    let query = this.model.findOne(filter).maxTimeMS(this.config.queryTimeout);
 
     if (this.customSelect || select.length > 0) {
       query = query.select(this.customSelect || select.join(' '));
@@ -287,10 +262,6 @@ export class QueryBuilder {
 
     if (this.collation) {
       query = query.collation(this.collation);
-    }
-
-    if (this.shouldExplain) {
-      return (await query.explain()) as any;
     }
 
     return await query;
@@ -323,8 +294,6 @@ export class QueryBuilder {
     this.customSelect = undefined;
     this.projection = undefined;
     this.indexHint = undefined;
-    this.shouldExplain = false;
-    this.distinctField = undefined;
     this.collation = undefined;
     this.customFilters = [];
   }
@@ -334,7 +303,7 @@ export class QueryBuilder {
     sort: SortOptions,
     select: string[]
   ): Promise<T[]> {
-    let query = this.model.find(filter);
+    let query = this.model.find(filter).maxTimeMS(this.config.queryTimeout);
 
     if (this.customSelect || select.length > 0) {
       query = query.select(this.customSelect || select.join(' '));
@@ -362,10 +331,6 @@ export class QueryBuilder {
 
     query = query.sort(sort);
 
-    if (this.shouldExplain) {
-      return (await query.explain()) as any;
-    }
-
     return await query;
   }
 
@@ -375,7 +340,7 @@ export class QueryBuilder {
     select: string[],
     pagination: PaginationOptions
   ): Promise<{ items: T[]; totalCount: number }> {
-    let query = this.model.find(filter);
+    let query = this.model.find(filter).maxTimeMS(this.config.queryTimeout);
 
     if (this.customSelect || select.length > 0) {
       query = query.select(this.customSelect || select.join(' '));
@@ -401,20 +366,9 @@ export class QueryBuilder {
       query = query.collation(this.collation);
     }
 
-    if (this.shouldExplain) {
-      return {
-        items: (await query
-          .sort(sort)
-          .skip(pagination.skip)
-          .limit(pagination.limit)
-          .explain()) as any,
-        totalCount: 0,
-      };
-    }
-
     const [items, totalCount] = await Promise.all([
       query.sort(sort).skip(pagination.skip).limit(pagination.limit),
-      this.model.countDocuments(filter),
+      this.model.countDocuments(filter).maxTimeMS(this.config.queryTimeout),
     ]);
 
     return { items, totalCount };
@@ -469,7 +423,16 @@ export class QueryBuilder {
         for (const op in value) {
           const mongoOp = operatorsMap[op as keyof typeof operatorsMap];
           if (mongoOp) {
-            conditions[mongoOp] = this.parseValue(value[op]);
+            const parsedValue = this.parseValue(value[op]);
+
+            // Prevent large array attacks
+            if ((mongoOp === '$in' || mongoOp === '$nin') && Array.isArray(parsedValue)) {
+              if (parsedValue.length > 1000) {
+                throw new Error(`${op} operator array size exceeds maximum of 1000`);
+              }
+            }
+
+            conditions[mongoOp] = parsedValue;
           }
         }
 
@@ -487,6 +450,10 @@ export class QueryBuilder {
   private buildSearch(): Record<string, any> {
     if (!this.queryParams.search) return {};
 
+    // Sanitize and limit search input
+    const searchTerm = String(this.queryParams.search).slice(0, 100);
+    const sanitized = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     // Use MongoDB text search if enabled and available
     if (this.config.enableTextSearch) {
       const textIndexes = this.model.schema
@@ -494,7 +461,7 @@ export class QueryBuilder {
         .filter(([fields]) => Object.values(fields).some(val => val === 'text'));
 
       if (textIndexes.length > 0) {
-        return { $text: { $search: this.queryParams.search } };
+        return { $text: { $search: sanitized } };
       }
     }
 
@@ -502,7 +469,7 @@ export class QueryBuilder {
     if (this.config.searchFields.length === 0) return {};
 
     // eslint-disable-next-line security/detect-non-literal-regexp
-    const regex = new RegExp(this.queryParams.search, 'i');
+    const regex = new RegExp(sanitized, 'i');
     return { $or: this.config.searchFields.map(field => ({ [field]: regex })) };
   }
 
@@ -595,30 +562,6 @@ export class QueryBuilder {
 
     if (this.queryParams.limit && Number(this.queryParams.limit) > this.config.maxLimit) {
       throw new Error(`Limit exceeds maximum allowed: ${this.config.maxLimit}`);
-    }
-
-    // Validate populate paths exist in schema
-    if (this.populateFields.length > 0) {
-      const schema = this.model.schema;
-      this.populateFields.forEach(pop => {
-        const path = typeof pop === 'string' ? pop : pop.path;
-        if (path && !schema.path(path) && !schema.virtualpath(path)) {
-          console.warn(`[QueryBuilder] Warning: Populate path '${path}' not found in schema`);
-        }
-      });
-    }
-
-    // Validate sort fields
-    if (this.config.sortableFields.length > 0 && this.queryParams.sort) {
-      const sortFields = this.queryParams.sort
-        .split(',')
-        .map((f: string) => f.replace('-', '').trim());
-      const invalidFields = sortFields.filter(
-        (f: string) => !this.config.sortableFields.includes(f)
-      );
-      if (invalidFields.length > 0) {
-        console.warn(`[QueryBuilder] Warning: Invalid sort fields: ${invalidFields.join(', ')}`);
-      }
     }
   }
 }

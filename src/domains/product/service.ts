@@ -11,7 +11,7 @@ interface IData {
 
 const queryBuilder = new QueryBuilder({
   searchFields: ['name', 'description'],
-  sortableFields: ['name', 'createdAt', 'price', 'rating'],
+  sortableFields: ['name', 'createdAt', 'price', 'rating', 'stockQuantity'],
   filterableFields: ['name', 'createdAt'],
   defaultSort: '-createdAt',
 });
@@ -67,4 +67,44 @@ const deleteById = async (id: string): Promise<IProduct | null> => {
   return deletedItem;
 };
 
-export { create, deleteById, getById, search, updateById };
+// ✅ Stock check
+const verifyStockQuantity = async (items: { product: string; quantity: number }[]) => {
+  const productIds = items.map(i => i.product);
+  const products = await Model.find({ _id: { $in: productIds } })
+    .select('name price stockQuantity')
+    .lean();
+  const productMap = new Map(products.map(p => [p._id.toString(), p]));
+  let subtotal = 0;
+  const populatedItems = [];
+  for (const item of items) {
+    const productDoc = productMap.get(item.product.toString());
+    if (!productDoc)
+      throw new BadRequestError(`Invalid product ID: ${item.product}`, 'create() order method');
+
+    // ✅ Stock check
+    if (productDoc.stockQuantity < item.quantity) {
+      throw new BadRequestError(
+        `Product "${productDoc.name}" is out of stock or not enough quantity available`,
+        'create() order method'
+      );
+    }
+
+    const total = productDoc.price * item.quantity;
+    subtotal += total;
+
+    populatedItems.push({
+      product: productDoc._id,
+      name: productDoc.name,
+      price: productDoc.price,
+      quantity: item.quantity,
+      total,
+    });
+  }
+
+  return {
+    subtotal,
+    populatedItems,
+  };
+};
+
+export { create, deleteById, getById, search, updateById, verifyStockQuantity };
