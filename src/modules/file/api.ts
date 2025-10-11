@@ -14,6 +14,7 @@ import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sen
 // import { aggregateWithPagination } from '@/libraries/query/aggregateWithPagination';
 // import { PipelineStage } from 'mongoose';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
+import { authenticate, authorize } from '@/middlewares/auth';
 
 const model: string = 'Product';
 
@@ -26,12 +27,10 @@ const queryBuilder = new QueryBuilder({
 const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
-  /* =======================================
-     [GET] /api/v1/files
-     Description here
-     ======================================= */
-  router.get('/', async (req: Request, res: Response) => {
-    console.log('req..qery', req.query);
+  /*
+[GET] /api/v1/files - Get all files - Public
+*/
+  router.get('/', authenticate, authorize('admin', 'user'), async (req: Request, res: Response) => {
     const data = await queryBuilder.query(FileModel, req.query).paginate().lean().execute();
 
     paginatedSuccessResponse(res, { data });

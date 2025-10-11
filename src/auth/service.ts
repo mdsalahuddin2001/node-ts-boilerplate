@@ -7,6 +7,7 @@ export const loginUser = (user: {
   id: string;
   email: string;
   name: string;
+  role: 'admin' | 'user' | 'vendor';
 }): { accessToken: string; refreshToken: string } => {
   const { accessToken, refreshToken } = generateTokens(user);
   // TODOO: save refresh token in DB or cache
@@ -18,6 +19,8 @@ export const refresh = (token: string): { accessToken: string; refreshToken: str
     const { accessToken, refreshToken } = generateTokens({
       id: payload.sub,
       email: payload.email,
+      name: payload.name,
+      role: payload.role,
     });
     // TODOO: save refresh token in DB or cache
     return { accessToken, refreshToken };

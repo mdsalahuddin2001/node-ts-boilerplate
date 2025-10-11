@@ -49,6 +49,7 @@ const routes = (): express.Router => {
             id: user.id,
             email: user.email,
             name: user.name,
+            role: user.role,
           });
           setAuthCookies(res, { accessToken, refreshToken });
           successResponse(res, {

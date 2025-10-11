@@ -6,7 +6,7 @@ import { baseSchema } from '../../libraries/db/base-schema';
 export interface IUser extends Document {
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'vendor';
   password: string;
 }
 

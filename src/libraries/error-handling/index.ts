@@ -53,8 +53,16 @@ export class NotFoundError extends AppError {
   }
 }
 
-export class NotAuthorizedError extends AppError {
+export class UnauthorizedError extends AppError {
   statusCode = StatusCodes.UNAUTHORIZED;
+  status = 'error';
+
+  constructor(message: string, comingFrom: string) {
+    super(message, comingFrom);
+  }
+}
+export class ForbiddenError extends AppError {
+  statusCode = StatusCodes.FORBIDDEN;
   status = 'error';
 
   constructor(message: string, comingFrom: string) {
