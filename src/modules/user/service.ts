@@ -21,6 +21,7 @@ const create = async ({
     throw new BadRequestError(`${model} already exists`, `user service create() method`);
   }
   const newItem = await Model.create({ email, name, password, role });
+
   logger.info(`create(): ${model} created`, { email });
   return newItem;
 };

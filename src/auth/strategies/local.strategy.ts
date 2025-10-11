@@ -1,7 +1,7 @@
 import { Strategy as LocalStrategy } from 'passport-local';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
-import { getByEmail } from '@/domains/user/service';
+import { getByEmail } from '@/modules/user/service';
 
 passport.use(
   new LocalStrategy(

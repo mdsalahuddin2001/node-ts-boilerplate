@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import logger from './libraries/log/logger';
-import domainRoutes from './domains/index';
+import domainRoutes from './modules/index';
 
 function defineRoutes(expressApp: Application): void {
   logger.info('Defining routes...');

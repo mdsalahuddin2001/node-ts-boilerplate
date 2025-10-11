@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 
 const setAuthCookies = (
   res: Response,
@@ -18,5 +18,15 @@ const setAuthCookies = (
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
+const clearAuthCookies = (res: Response): void => {
+  const options: CookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  };
 
-export { setAuthCookies };
+  res.clearCookie('access_token', options);
+  res.clearCookie('refresh_token', options);
+};
+
+export { setAuthCookies, clearAuthCookies };

@@ -3,7 +3,7 @@ import { $, cd } from 'zx';
 
 // Function to create the domain structure
 const createDomain = async (domainName: string): Promise<void> => {
-  cd(`src/domains`);
+  cd(`src/modules`);
   await $`mkdir ${domainName}`;
 
   // Create the files

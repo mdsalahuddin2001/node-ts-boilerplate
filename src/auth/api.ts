@@ -1,15 +1,15 @@
 import express, { NextFunction, Request, Response } from 'express';
 
-import { create } from '@/domains/user/service';
-import { createUserSchema } from '@/domains/user/validation';
+import { create } from '@/modules/user/service';
+import { createUserSchema } from '@/modules/user/validation';
 import logger from '@/libraries/log/logger';
 import { successResponse } from '@/libraries/utils/sendResponse';
 import { validateBody } from '@/middlewares/request-validate';
 import { loginSchema } from './validation';
 import passport from 'passport';
 import { loginUser, refresh } from './service';
-import { setAuthCookies } from '@/libraries/utils/cookies';
-import { IUser } from '@/domains/user/schema';
+import { clearAuthCookies, setAuthCookies } from '@/libraries/utils/cookies';
+import { IUser } from '@/modules/user/schema';
 import { BadRequestError } from '@/libraries/error-handling';
 
 const model: string = 'User';
@@ -59,6 +59,16 @@ const routes = (): express.Router => {
       )(req, res, next);
     }
   );
+  /**
+   * @route POST /auth/logout
+   * @description Logout user
+   * @access Private
+   */
+  router.post('/logout', (_req: Request, res: Response) => {
+    clearAuthCookies(res);
+    successResponse(res, { message: 'User logged out successfully' });
+  });
+
   /**
    * @route POST /auth/refresh
    * @description Refresh tokens
