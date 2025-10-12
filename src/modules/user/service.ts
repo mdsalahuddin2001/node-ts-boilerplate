@@ -1,6 +1,8 @@
 import { BadRequestError } from '@/libraries/error-handling';
 import logger from '../../libraries/log/logger';
 import Model, { IUser } from './schema';
+import { welcomeEmail } from '@/libraries/email/auth/welcome';
+import { sendEmail } from '@/libraries/email';
 
 const model: string = 'User';
 // Create User
@@ -21,7 +23,12 @@ const create = async ({
     throw new BadRequestError(`${model} already exists`, `user service create() method`);
   }
   const newItem = await Model.create({ email, name, password, role });
-
+  // Send welcome email
+  const emailTemplate = welcomeEmail({ name, email });
+  await sendEmail({
+    to: email,
+    ...emailTemplate,
+  });
   logger.info(`create(): ${model} created`, { email });
   return newItem;
 };
