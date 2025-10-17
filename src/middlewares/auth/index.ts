@@ -2,20 +2,20 @@ import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError, ForbiddenError } from '@/libraries/error-handling';
 import { verifyAccessToken } from '@/libraries/utils/tokens';
 import logger from '@/libraries/log/logger';
-
-// Extend Express Request type to include user
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: {
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface User {
       id: string;
       email: string;
       name?: string;
       role: 'user' | 'admin' | 'vendor';
       iat?: number;
       exp?: number;
-    };
+    }
   }
 }
+
 /**
  * Middleware to authenticate users using JWT token
  * Extracts token from Authorization header or cookies
