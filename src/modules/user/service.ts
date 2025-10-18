@@ -76,3 +76,13 @@ export const getByEmail = async (email: string): Promise<IUser | null> => {
   logger.info(`getByEmail(): ${model} fetched`, { email });
   return item;
 };
+// Get user by id
+export const getById = async (userId: string): Promise<IUser | null> => {
+  const item = await Model.findById(userId);
+  if (!item) {
+    logger.info(`getByEmail(): ${model} not found`, { userId });
+    return null;
+  }
+  logger.info(`getById(): ${model} fetched`, { userId });
+  return item;
+};

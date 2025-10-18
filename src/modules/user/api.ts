@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import logger from '../../libraries/log/logger';
-import { create, getCurrent, search } from './service';
+import { create, getById, getCurrent, search } from './service';
 
 import { logRequest } from '../../middlewares/log';
 import { NotFoundError } from '@/libraries/error-handling';
@@ -27,6 +27,16 @@ const routes = (): express.Router => {
       paginatedSuccessResponse(res, { data });
     }
   );
+  /*
+  [GET] /api/v1/users/:id - Get user by id - User
+  */
+  router.get('/:id', authenticate, logRequest({}), async (req: Request, res: Response) => {
+    const user = await getById(req?.params?.id || '');
+    if (!user) {
+      throw new NotFoundError(`${model} not found`, `domain/user/api.ts - /:id`);
+    }
+    successResponse(res, { data: user });
+  });
   /*
   [GET] /api/v1/users/me - Get current user - User
   */
