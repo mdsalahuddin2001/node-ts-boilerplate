@@ -66,6 +66,20 @@ export const getCurrent = async (userId: string): Promise<IUser | null> => {
   return item;
 };
 
+// Update current user
+export const updateUserById = async (
+  userId: string,
+  data: Partial<IUser>
+): Promise<IUser | null> => {
+  const item = await Model.findByIdAndUpdate(userId, data, { new: true });
+  if (!item) {
+    logger.info(`updateUserById(): ${model} not found`, { userId });
+    return null;
+  }
+  logger.info(`updateUserById(): ${model} updated`, { userId });
+  return item;
+};
+
 // Get user by email
 export const getByEmail = async (email: string): Promise<IUser | null> => {
   const item = await Model.findOne({ email });

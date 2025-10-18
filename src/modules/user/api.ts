@@ -1,11 +1,11 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import logger from '../../libraries/log/logger';
-import { create, getById, getCurrent, search } from './service';
+import { getById, getCurrent, search, updateUserById } from './service';
 
-import { logRequest } from '../../middlewares/log';
-import { NotFoundError } from '@/libraries/error-handling';
+import { BadRequestError, NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import { authenticate, authorize } from '@/middlewares/auth';
+import { logRequest } from '../../middlewares/log';
 
 const model: string = 'Product';
 
@@ -28,16 +28,6 @@ const routes = (): express.Router => {
     }
   );
   /*
-  [GET] /api/v1/users/:id - Get user by id - User
-  */
-  router.get('/:id', authenticate, logRequest({}), async (req: Request, res: Response) => {
-    const user = await getById(req?.params?.id || '');
-    if (!user) {
-      throw new NotFoundError(`${model} not found`, `domain/user/api.ts - /:id`);
-    }
-    successResponse(res, { data: user });
-  });
-  /*
   [GET] /api/v1/users/me - Get current user - User
   */
   router.get('/me', authenticate, logRequest({}), async (req: Request, res: Response) => {
@@ -48,17 +38,39 @@ const routes = (): express.Router => {
     successResponse(res, { data: user });
   });
 
-  router.post(
-    '/',
+  /*
+  [GET] /api/v1/users/:id - Get user by id - User
+  */
+  router.get('/:id', authenticate, logRequest({}), async (req: Request, res: Response) => {
+    const user = await getById(req?.params?.id || '');
+    if (!user) {
+      throw new NotFoundError(`${model} not found`, `domain/user/api.ts - /:id`);
+    }
+    successResponse(res, { data: user });
+  });
+
+  /*
+  [PATCH] /api/v1/users/me - Update current user - User
+  */
+  router.patch(
+    '/me',
+    authenticate,
     logRequest({}),
-    // validateRequest({ schema: createSchema }),
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const item = await create(req.body);
-        res.status(201).json(item);
-      } catch (error) {
-        next(error);
+    // validateRequest({ schema: updateSchema }),
+    async (req: Request, res: Response) => {
+      const { name } = req.body;
+      if (!name) {
+        throw new BadRequestError('Invalid request body', `module/user/api.ts - /me`);
       }
+      const user = await getById(req?.user?.id || '');
+      if (!user) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me`);
+      }
+      const item = await updateUserById(req?.user?.id || '', { name });
+      if (!item) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me`);
+      }
+      successResponse(res, { data: item });
     }
   );
 
