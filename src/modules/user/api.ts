@@ -5,18 +5,24 @@ import { create, getById, getCurrent, search, updateUserById } from './service';
 import { BadRequestError, NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import { authenticate, authorize } from '@/middlewares/auth';
+import { validateBody } from '@/middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
+import {
+  changePasswordSchema,
+  createUserSchema,
+  updateMeSchema,
+  updateUserSchema,
+} from './validation';
 
 const model: string = 'Product';
 
-// CRUD for entity
 const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
 
-  /*
-  [GET] /api/v1/users - Search users - Admin
-  */
+  /* =================================================
+  GET - /api/v1/users - Search users - Admin
+  ====================================================*/
   router.get(
     '/',
     authenticate,
@@ -27,18 +33,16 @@ const routes = (): express.Router => {
       paginatedSuccessResponse(res, { data });
     }
   );
+
   /* =================================================
   POST - /api/v1/users - Create user - Admin
   ====================================================*/
-  /*
-  [POST] /api/v1/users - Create user - Admin
-  */
   router.post(
     '/',
     authenticate,
     authorize('admin'),
+    validateBody(createUserSchema),
     logRequest({}),
-    // validateRequest({ schema: createSchema }),
     async (req: Request, res: Response) => {
       const { name, email, password, role = 'user' } = req.body;
       if (!name || !email || !password) {
@@ -51,6 +55,7 @@ const routes = (): express.Router => {
       successResponse(res, { data: item });
     }
   );
+
   /* =================================================
   GET - /api/v1/users/me - Get current user - User
   ====================================================*/
@@ -62,9 +67,9 @@ const routes = (): express.Router => {
     successResponse(res, { data: user });
   });
 
-  /*
-  [GET] /api/v1/users/:id - Get user by id - User
-  */
+  /* =================================================
+  GET - /api/v1/users/:id - Get user by id - User
+  ====================================================*/
   router.get('/:id', authenticate, logRequest({}), async (req: Request, res: Response) => {
     const user = await getById(req?.params?.id || '');
     if (!user) {
@@ -73,14 +78,14 @@ const routes = (): express.Router => {
     successResponse(res, { data: user });
   });
 
-  /*
+  /* =================================================
   PATCH - /api/v1/users/me - Update current user - User
-  */
+  ====================================================*/
   router.patch(
     '/me',
     authenticate,
+    validateBody(updateMeSchema),
     logRequest({}),
-    // validateRequest({ schema: updateSchema }),
     async (req: Request, res: Response) => {
       const { name } = req.body;
       if (!name) {
@@ -100,15 +105,15 @@ const routes = (): express.Router => {
       successResponse(res, { data: item });
     }
   );
+
   /* =================================================
   PATCH - /api/v1/users/me/change-password - Update current user password
   ====================================================*/
-
   router.patch(
     '/me/change-password',
     authenticate,
+    validateBody(changePasswordSchema),
     logRequest({}),
-    // validateRequest({ schema: updateSchema }),
     async (req: Request, res: Response) => {
       const { oldPassword, newPassword } = req.body;
       if (!oldPassword || !newPassword) {
@@ -137,11 +142,13 @@ const routes = (): express.Router => {
     }
   );
 
-  /*
+  /* =================================================
   GET - /api/v1/users/:id - Get user by id - Admin
-  */
+  ====================================================*/
   router.get(
     '/:id',
+    authenticate,
+    authorize('admin'),
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     async (_req: Request, res: Response, _next: NextFunction) => {
@@ -158,11 +165,10 @@ const routes = (): express.Router => {
   ====================================================*/
   router.patch(
     '/:id',
+    logRequest({}),
     authenticate,
     authorize('admin'),
-    logRequest({}),
-    // validateRequest({ schema: idSchema, isParam: true }),
-    // validateRequest({ schema: updateSchema }),
+    validateBody(updateUserSchema),
     async (req: Request, res: Response) => {
       const { name, email } = req.body;
       if (!name && !email) {
@@ -180,10 +186,12 @@ const routes = (): express.Router => {
     }
   );
 
+  /* =================================================
+  DELETE - /api/v1/users/:id - Delete user by id - Admin
+  ====================================================*/
   router.delete(
     '/:id',
     logRequest({}),
-    // validateRequest({ schema: idSchema, isParam: true }),
     async (_req: Request, res: Response, next: NextFunction) => {
       try {
         // await deleteById(req.params.id);
