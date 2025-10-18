@@ -1,3 +1,4 @@
+import { idSchema } from '@/libraries/utils/zod-validations';
 import { z } from 'zod';
 
 export const createUserSchema = z.object({
@@ -21,5 +22,8 @@ export const updateUserSchema = z.object({
   role: z.enum(['admin', 'user']).optional(),
 });
 
+export const deleteUserSchema = z.object({
+  id: idSchema,
+});
 // Type inference
 export type User = z.infer<typeof createUserSchema>;

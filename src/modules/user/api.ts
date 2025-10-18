@@ -1,20 +1,21 @@
 import express, { NextFunction, Request, Response } from 'express';
 import logger from '../../libraries/log/logger';
-import { create, getById, getCurrent, search, updateUserById } from './service';
+import { create, deleteById, getById, getCurrent, search, updateUserById } from './service';
 
 import { BadRequestError, NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import { authenticate, authorize } from '@/middlewares/auth';
-import { validateBody } from '@/middlewares/request-validate';
+import { validateBody, validateParams } from '@/middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
 import {
   changePasswordSchema,
   createUserSchema,
+  deleteUserSchema,
   updateMeSchema,
   updateUserSchema,
 } from './validation';
 
-const model: string = 'Product';
+const model: string = 'User';
 
 const routes = (): express.Router => {
   const router = express.Router();
@@ -192,13 +193,15 @@ const routes = (): express.Router => {
   router.delete(
     '/:id',
     logRequest({}),
-    async (_req: Request, res: Response, next: NextFunction) => {
-      try {
-        // await deleteById(req.params.id);
-        res.status(204).json({ message: `${model} is deleted` });
-      } catch (error) {
-        next(error);
+    authenticate,
+    authorize('admin'),
+    validateParams(deleteUserSchema),
+    async (req: Request, res: Response) => {
+      const item = await deleteById(req?.params?.id || '');
+      if (!item) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /:id`);
       }
+      successResponse(res, { data: item });
     }
   );
 

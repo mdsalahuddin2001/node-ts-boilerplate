@@ -45,7 +45,7 @@ const queryBuilder = new QueryBuilder({
 
 // Search users
 export const search = async (query: SearchQuery) => {
-  const data = await queryBuilder.query(Model, query).paginate().execute();
+  const data = await queryBuilder.query(Model, query).paginate().select('-password').execute();
   return data;
 };
 
@@ -95,5 +95,16 @@ export const getById = async (userId: string): Promise<IUser | null> => {
     return null;
   }
   logger.info(`getById(): ${model} fetched`, { userId });
+  return item;
+};
+
+// Delete user by id
+export const deleteById = async (userId: string): Promise<IUser | null> => {
+  const item = await Model.findByIdAndDelete(userId);
+  if (!item) {
+    logger.info(`deleteById(): ${model} not found`, { userId });
+    return null;
+  }
+  logger.info(`deleteById(): ${model} deleted`, { userId });
   return item;
 };
