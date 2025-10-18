@@ -1,13 +1,11 @@
 import express, { NextFunction, Request, Response } from 'express';
-
-import { create } from '@/modules/user/service';
 import { createUserSchema } from '@/modules/user/validation';
 import logger from '@/libraries/log/logger';
 import { successResponse } from '@/libraries/utils/sendResponse';
 import { validateBody } from '@/middlewares/request-validate';
 import { loginSchema } from './validation';
 import passport from 'passport';
-import { loginUser, refresh } from './service';
+import { loginUser, refresh, register } from './service';
 import { clearAuthCookies, setAuthCookies } from '@/libraries/utils/cookies';
 import { IUser } from '@/modules/user/schema';
 import { BadRequestError } from '@/libraries/error-handling';
@@ -26,7 +24,7 @@ const routes = (): express.Router => {
    */
   router.post('/register', validateBody(createUserSchema), async (req: Request, res: Response) => {
     const { email, password, name } = req.body;
-    const item = await create({ email, password, name, role: 'user' });
+    const item = await register({ email, password, name, role: 'user' });
     successResponse(res, { data: item, message: 'User registered successfully' });
   });
 

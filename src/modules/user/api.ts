@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
 import logger from '../../libraries/log/logger';
-import { getById, getCurrent, search, updateUserById } from './service';
+import { create, getById, getCurrent, search, updateUserById } from './service';
 
 import { BadRequestError, NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
@@ -27,9 +27,33 @@ const routes = (): express.Router => {
       paginatedSuccessResponse(res, { data });
     }
   );
+  /* =================================================
+  POST - /api/v1/users - Create user - Admin
+  ====================================================*/
   /*
-  [GET] /api/v1/users/me - Get current user - User
+  [POST] /api/v1/users - Create user - Admin
   */
+  router.post(
+    '/',
+    authenticate,
+    authorize('admin'),
+    logRequest({}),
+    // validateRequest({ schema: createSchema }),
+    async (req: Request, res: Response) => {
+      const { name, email, password, role = 'user' } = req.body;
+      if (!name || !email || !password) {
+        throw new BadRequestError(
+          'Please provide name, email, password, and role',
+          `module/user/api.ts - /`
+        );
+      }
+      const item = await create({ name, email, password, role });
+      successResponse(res, { data: item });
+    }
+  );
+  /* =================================================
+  GET - /api/v1/users/me - Get current user - User
+  ====================================================*/
   router.get('/me', authenticate, logRequest({}), async (req: Request, res: Response) => {
     const user = await getCurrent(req?.user?.id || '');
     if (!user) {

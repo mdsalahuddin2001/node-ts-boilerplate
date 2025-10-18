@@ -1,10 +1,8 @@
-import bcrypt from 'bcrypt';
 import { BadRequestError } from '@/libraries/error-handling';
+import { QueryBuilder } from '@/libraries/query/QueryBuilder';
+import bcrypt from 'bcrypt';
 import logger from '../../libraries/log/logger';
 import Model, { IUser } from './schema';
-import { welcomeEmail } from '@/libraries/email/auth/welcome';
-import { sendEmail } from '@/libraries/email';
-import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 interface SearchQuery {
   search?: string;
   sort?: string;
@@ -32,12 +30,7 @@ export const create = async ({
     throw new BadRequestError(`${model} already exists`, `user service create() method`);
   }
   const newItem = await Model.create({ email, name, password, role });
-  // Send welcome email
-  const emailTemplate = welcomeEmail({ name, email });
-  await sendEmail({
-    to: email,
-    ...emailTemplate,
-  });
+
   logger.info(`create(): ${model} created`, { email });
   return newItem;
 };
