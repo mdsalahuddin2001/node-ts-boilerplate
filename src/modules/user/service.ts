@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { BadRequestError } from '@/libraries/error-handling';
 import logger from '../../libraries/log/logger';
 import Model, { IUser } from './schema';
@@ -71,7 +72,10 @@ export const updateUserById = async (
   userId: string,
   data: Partial<IUser>
 ): Promise<IUser | null> => {
-  const item = await Model.findByIdAndUpdate(userId, data, { new: true });
+  if (data.password) {
+    data.password = await bcrypt.hash(data.password, 10);
+  }
+  const item = await Model.findByIdAndUpdate(userId, data, { new: true }).select('-password');
   if (!item) {
     logger.info(`updateUserById(): ${model} not found`, { userId });
     return null;

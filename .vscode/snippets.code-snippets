@@ -265,10 +265,10 @@
   "Route Comment": {
     "prefix": "cmt-route",
     "body": [
-      "/*",
-      "[${1:METHOD}] ${2:/api/v1/example} - ${3:Description here} - ${4:Public|Private|Admin}",
-      "*/",
+      "/* =================================================",
+      "${1:METHOD} - ${2:/api/v1/example} - ${3:Description here} - ${4:Public|Private|Admin}",
+      "====================================================*/",
     ],
-    "description": "Simple inline comment for Express route",
+    "description": "Detailed route comment block for Express route",
   },
 }

@@ -3,13 +3,15 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 import { baseSchema } from '../../libraries/db/base-schema';
 
 // Define an interface for the Product document
-export interface IUser extends Document {
+export interface User extends Document {
   name: string;
   email: string;
   role: 'admin' | 'user' | 'vendor';
   password: string;
 }
-
+export interface IUser extends User, Document {
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
 // Create the schema with TypeScript
 const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
@@ -28,6 +30,12 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
+
+// Instance methods
+userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
+  if (!this.password) throw new Error('Password not selected');
+  return bcrypt.compare(password, this.password);
+};
 
 // Create and export the model
 const UserModel: Model<IUser> = mongoose.model<IUser>('User', userSchema);

@@ -50,7 +50,7 @@ const routes = (): express.Router => {
   });
 
   /*
-  [PATCH] /api/v1/users/me - Update current user - User
+  PATCH - /api/v1/users/me - Update current user - User
   */
   router.patch(
     '/me',
@@ -60,7 +60,10 @@ const routes = (): express.Router => {
     async (req: Request, res: Response) => {
       const { name } = req.body;
       if (!name) {
-        throw new BadRequestError('Invalid request body', `module/user/api.ts - /me`);
+        throw new BadRequestError(
+          'Please provide at least one field to update',
+          `module/user/api.ts - /me`
+        );
       }
       const user = await getById(req?.user?.id || '');
       if (!user) {
@@ -73,7 +76,46 @@ const routes = (): express.Router => {
       successResponse(res, { data: item });
     }
   );
+  /* =================================================
+  PATCH - /api/v1/users/me/change-password - Update current user password
+  ====================================================*/
 
+  router.patch(
+    '/me/change-password',
+    authenticate,
+    logRequest({}),
+    // validateRequest({ schema: updateSchema }),
+    async (req: Request, res: Response) => {
+      const { oldPassword, newPassword } = req.body;
+      if (!oldPassword || !newPassword) {
+        throw new BadRequestError(
+          'Please provide oldPassword and newPassword',
+          `module/user/api.ts - /me/change-password`
+        );
+      }
+      const user = await getById(req?.user?.id || '');
+      if (!user) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me/change-password`);
+      }
+
+      const isPasswordMatch = await user.comparePassword(oldPassword);
+      if (!isPasswordMatch) {
+        throw new BadRequestError(
+          'Old password does not match',
+          `module/user/api.ts - /me/change-password`
+        );
+      }
+      const item = await updateUserById(req?.user?.id || '', { password: newPassword });
+      if (!item) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me/change-password`);
+      }
+      successResponse(res, { data: item });
+    }
+  );
+
+  /*
+  GET - /api/v1/users/:id - Get user by id - Admin
+  */
   router.get(
     '/:id',
     logRequest({}),
@@ -87,21 +129,30 @@ const routes = (): express.Router => {
     }
   );
 
-  router.put(
+  /* =================================================
+  PATCH - /api/v1/users/:id - Update user by id - Admin
+  ====================================================*/
+  router.patch(
     '/:id',
+    authenticate,
+    authorize('admin'),
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     // validateRequest({ schema: updateSchema }),
-    async (_req: Request, res: Response, next: NextFunction) => {
-      try {
-        const item = null;
-        if (!item) {
-          throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PUT /:id`);
-        }
-        res.status(200).json(item);
-      } catch (error) {
-        next(error);
+    async (req: Request, res: Response) => {
+      const { name, email } = req.body;
+      if (!name && !email) {
+        throw new BadRequestError('Invalid request body', `module/user/api.ts - /:id`);
       }
+      const user = await getById(req?.params?.id || '');
+      if (!user) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /:id`);
+      }
+      const item = await updateUserById(req?.params?.id || '', { name, email });
+      if (!item) {
+        throw new NotFoundError(`${model} not found`, `module/user/api.ts - /:id`);
+      }
+      successResponse(res, { data: item });
     }
   );
 
