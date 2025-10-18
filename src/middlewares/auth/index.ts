@@ -51,7 +51,7 @@ export const authenticate = async (
     next();
   } catch (error) {
     logger.error('Authentication failed', error);
-    next(new UnauthorizedError('Invalid or expired token', 'authenticate middleware'));
+    next(new UnauthorizedError('Unauthenticated', 'authenticate middleware'));
   }
 };
 

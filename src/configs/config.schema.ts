@@ -23,11 +23,7 @@ const schema = z.object({
 
   // Email
   email: z.object({
-    host: z.string().min(1, 'Email host is required'),
-    port: z.number().int().positive(),
     secure: z.boolean(),
-    user: z.string().min(1, 'SMTP email user is required'),
-    password: z.string().min(1, 'SMTP email password is required'),
     from: z.email('Invalid SMTP from email').min(1, 'SMTP from email is required'),
     fromName: z.string().min(1, 'SMTP from name is required'),
   }),

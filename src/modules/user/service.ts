@@ -3,10 +3,18 @@ import logger from '../../libraries/log/logger';
 import Model, { IUser } from './schema';
 import { welcomeEmail } from '@/libraries/email/auth/welcome';
 import { sendEmail } from '@/libraries/email';
+import { QueryBuilder } from '@/libraries/query/QueryBuilder';
+interface SearchQuery {
+  search?: string;
+  sort?: string;
+  limit?: string | number;
+  page?: string | number;
+}
 
 const model: string = 'User';
-// Create User
-const create = async ({
+
+// Create a new user
+export const create = async ({
   email,
   name,
   password,
@@ -33,8 +41,33 @@ const create = async ({
   return newItem;
 };
 
-//
-const getByEmail = async (email: string): Promise<IUser | null> => {
+// Quer Builder
+const queryBuilder = new QueryBuilder({
+  searchFields: ['name', 'email'],
+  sortableFields: ['name', 'createdAt', 'email', 'role'],
+  filterableFields: ['name', 'createdAt', 'role'],
+  defaultSort: '-createdAt',
+});
+
+// Search users
+export const search = async (query: SearchQuery) => {
+  const data = await queryBuilder.query(Model, query).paginate().execute();
+  return data;
+};
+
+// Get current user
+export const getCurrent = async (userId: string): Promise<IUser | null> => {
+  const item = await Model.findById(userId).select('-password');
+  if (!item) {
+    logger.info(`getCurrent(): ${model} not found`, { userId });
+    return null;
+  }
+  logger.info(`getCurrent(): ${model} fetched`, { userId });
+  return item;
+};
+
+// Get user by email
+export const getByEmail = async (email: string): Promise<IUser | null> => {
   const item = await Model.findOne({ email });
   if (!item) {
     logger.info(`getByEmail(): ${model} not found`, { email });
@@ -43,5 +76,3 @@ const getByEmail = async (email: string): Promise<IUser | null> => {
   logger.info(`getByEmail(): ${model} fetched`, { email });
   return item;
 };
-
-export { create, getByEmail };

@@ -1,11 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import logger from '../../libraries/log/logger';
-import { create } from './service';
+import { create, getCurrent, search } from './service';
 
-// import { createSchema, updateSchema, idSchema } from './request';
-// import { validateRequest } from '../../middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
 import { NotFoundError } from '@/libraries/error-handling';
+import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
+import { authenticate, authorize } from '@/middlewares/auth';
 
 const model: string = 'Product';
 
@@ -14,12 +14,28 @@ const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
 
-  router.get('/', logRequest({}), async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({});
-    } catch (error) {
-      next(error);
+  /*
+  [GET] /api/v1/users - Search users - Admin
+  */
+  router.get(
+    '/',
+    authenticate,
+    authorize('admin'),
+    logRequest({}),
+    async (req: Request, res: Response) => {
+      const data = await search(req.query);
+      paginatedSuccessResponse(res, { data });
     }
+  );
+  /*
+  [GET] /api/v1/users/me - Get current user - User
+  */
+  router.get('/me', authenticate, logRequest({}), async (req: Request, res: Response) => {
+    const user = await getCurrent(req?.user?.id || '');
+    if (!user) {
+      throw new NotFoundError(`${model} not found`, `domain/user/api.ts - /me`);
+    }
+    successResponse(res, { data: user });
   });
 
   router.post(

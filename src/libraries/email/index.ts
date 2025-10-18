@@ -21,12 +21,12 @@ let transporter: Transporter | null = null;
 const getTransporter = (): Transporter => {
   if (!transporter) {
     transporter = nodemailer.createTransport({
-      host: configs.email.host,
-      port: configs.email.port,
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
       secure: configs.email.secure, // true for 465, false for other ports
       auth: {
-        user: configs.email.user,
-        pass: configs.email.password,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
   }

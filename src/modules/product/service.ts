@@ -9,10 +9,11 @@ interface IData {
   [key: string]: any;
 }
 
+// Query Builder
 const queryBuilder = new QueryBuilder({
-  searchFields: ['name', 'description'],
+  searchFields: ['name', 'description', 'slug'],
   sortableFields: ['name', 'createdAt', 'price', 'rating', 'stockQuantity'],
-  filterableFields: ['name', 'createdAt'],
+  filterableFields: ['name', 'createdAt', 'category'],
   defaultSort: '-createdAt',
 });
 
@@ -36,7 +37,7 @@ const search = async (query: SearchQuery) => {
   const data = await queryBuilder
     .query(Model, query)
     .paginate()
-    .populate(['category', 'thumbnail'])
+    .populate(['category', 'thumbnail', 'gallery'])
     // .where({ stockQuantity: { $gt: 0 } })
     .execute();
   return data;
