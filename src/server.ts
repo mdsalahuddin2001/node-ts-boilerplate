@@ -90,19 +90,66 @@ const routesMiddleware = (app: Application): void => {
 // };
 /* ------ Error Handler ----- */
 const errorHandler = (app: Application): void => {
-  app.use((error: IErrorResponse, _req: Request, res: Response, _next: NextFunction) => {
-    logger.log('error', `Error Handler ${error.comingFrom}:`, error);
-    if (error instanceof AppError) {
-      errorResponse(res, error.serializeErrors());
-    } else {
-      errorResponse(res, {
+  app.use(
+    (
+      error: IErrorResponse & {
+        name?: string;
+        code?: number;
+        errors?: Record<string, any>;
+        keyValue?: Record<string, any>;
+        path?: string;
+        value?: any;
+      },
+      _req: Request,
+      res: Response,
+      _next: NextFunction
+    ) => {
+      logger.log('error', `Error Handler ${error.comingFrom || ''}:`, error);
+
+      // Handle known Mongo/Mongoose error types
+      if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors || {}).map((err: any) => err.message);
+
+        return errorResponse(res, {
+          statusCode: 400,
+          status: 'fail',
+          message: 'Validation Error',
+          errors: messages,
+        });
+      }
+
+      if (error.name === 'CastError') {
+        return errorResponse(res, {
+          statusCode: 400,
+          status: 'fail',
+          message: `Invalid ${error.path}: ${error.value}`,
+        });
+      }
+
+      if (error.code === 11000) {
+        const field = Object.keys(error.keyValue || {})[0];
+        return errorResponse(res, {
+          statusCode: 409,
+          status: 'fail',
+          message: `Duplicate value for field: ${field}`,
+        });
+      }
+
+      // Keep your original AppError & fallback handling
+      if (error instanceof AppError) {
+        return errorResponse(res, error.serializeErrors());
+      }
+
+      // Fallback: unknown or unhandled error
+      return errorResponse(res, {
         statusCode: error.statusCode || 500,
         status: error.status || 'error',
         message: error.message || 'Internal Server Error',
       });
     }
-  });
+  );
 };
+
 /* ------ Start Server ----- */
 const startServer = (app: Application): void => {
   try {

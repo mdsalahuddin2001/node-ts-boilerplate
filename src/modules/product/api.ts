@@ -42,8 +42,9 @@ const routes = (): express.Router => {
       //   'thumbnail',
       //   'gallery',
       // ]);
+
       const body = createSchema.parse(req.body);
-      res.send(body);
+
       const data = await create(body);
       successResponse(res, {
         data,
