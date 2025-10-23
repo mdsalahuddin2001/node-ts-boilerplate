@@ -4,9 +4,9 @@ import { create, deleteById, getById, search, updateById } from './service';
 
 import { NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
-import { validateBody } from '@/middlewares/request-validate';
+import { validateBody, validateQuery } from '@/middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
-import { createSchema } from './validation';
+import { createSchema, searchQuerySchema } from './validation';
 
 const model: string = 'Product';
 
@@ -18,10 +18,16 @@ const routes = (): express.Router => {
   /*
   [GET] /api/v1/products - Get All Products - Public
   */
-  router.get('/', logRequest({}), async (req: Request, res: Response, _next: NextFunction) => {
-    const data = await search(req.query);
-    paginatedSuccessResponse(res, { data });
-  });
+  router.get(
+    '/',
+    logRequest({}),
+    validateQuery(searchQuerySchema),
+    async (req: Request, res: Response, _next: NextFunction) => {
+      const query = searchQuerySchema.parse(req.query);
+      const data = await search(query);
+      paginatedSuccessResponse(res, { data });
+    }
+  );
 
   /*
   [POST] /api/v1/products - Create a Product - Admin

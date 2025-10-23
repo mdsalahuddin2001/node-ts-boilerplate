@@ -20,4 +20,27 @@ export const createSchema = z.object({
   updatedAt: z.date().optional(),
 });
 
+// query schema
+export const searchQuerySchema = z.object({
+  search: z.string().optional(),
+  sort: z.string().optional(),
+  limit: z.coerce.number().optional(),
+  page: z.coerce.number().optional(),
+  select: z.string().optional(),
+  category: idSchema.optional(),
+  price: z
+    .union([
+      z.coerce.number(),
+      z.object({
+        lte: z.coerce.number().optional(),
+        gte: z.coerce.number().optional(),
+        lt: z.coerce.number().optional(),
+        gt: z.coerce.number().optional(),
+      }),
+    ])
+    .optional(),
+});
+
+export type SearchQueryType = z.infer<typeof searchQuerySchema>;
+
 export const getByIdSchema = idSchema;

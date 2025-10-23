@@ -2,6 +2,7 @@ import logger from '@/libraries/log/logger';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 import Model, { IProduct } from './schema';
 import { BadRequestError } from '@/libraries/error-handling';
+import { SearchQueryType } from './validation';
 
 const model: string = 'Product';
 
@@ -13,7 +14,7 @@ interface IData {
 const queryBuilder = new QueryBuilder({
   searchFields: ['name', 'description', 'slug'],
   sortableFields: ['name', 'createdAt', 'price', 'rating', 'stockQuantity'],
-  filterableFields: ['name', 'createdAt', 'category'],
+  filterableFields: ['name', 'createdAt', 'category', 'price', 'stockQuantity'],
   defaultSort: '-createdAt',
 });
 
@@ -26,14 +27,7 @@ const create = async (data: IData): Promise<any> => {
   return saved;
 };
 
-interface SearchQuery {
-  search?: string;
-  sort?: string;
-  limit?: string | number;
-  page?: string | number;
-}
-
-const search = async (query: SearchQuery) => {
+const search = async (query: SearchQueryType) => {
   const data = await queryBuilder
     .query(Model, query)
     .paginate()
