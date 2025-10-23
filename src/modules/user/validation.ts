@@ -11,10 +11,15 @@ export const updateMeSchema = z.object({
   name: z.string().optional(),
 });
 
-export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(1, 'New password is required'),
-});
+export const changePasswordSchema = z
+  .object({
+    oldPassword: z.string().min(1, 'Old password is required'),
+    newPassword: z.string().min(1, 'New password is required'),
+  })
+  .refine(data => data.oldPassword !== data.newPassword, {
+    message: 'New password must be different from old password',
+    path: ['newPassword'],
+  });
 
 export const updateUserSchema = z.object({
   name: z.string().optional(),

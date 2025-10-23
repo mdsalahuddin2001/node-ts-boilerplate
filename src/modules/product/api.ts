@@ -31,7 +31,20 @@ const routes = (): express.Router => {
     logRequest({}),
     validateBody(createSchema),
     async (req: Request, res: Response) => {
-      const data = await create(req.body);
+      // const body = pick(req.body, [
+      //   'name',
+      //   'slug',
+      //   'sku',
+      //   'price',
+      //   'description',
+      //   'category',
+      //   'stock',
+      //   'thumbnail',
+      //   'gallery',
+      // ]);
+      const body = createSchema.parse(req.body);
+      res.send(body);
+      const data = await create(body);
       successResponse(res, {
         data,
         statusCode: 201,
