@@ -13,6 +13,8 @@ export const createSchema = z.object({
   reviewCount: z.number().int().nonnegative().default(0).optional(),
   stockQuantity: z.number().int().nonnegative().default(0).optional(),
   status: z.enum(['active', 'inactive']).default('active'),
+  thumbnail: z.string().optional(),
+  gallery: z.array(z.string()).optional(),
   // If your baseSchema includes common fields (like createdAt, updatedAt, deletedAt, etc.), add them here:
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
