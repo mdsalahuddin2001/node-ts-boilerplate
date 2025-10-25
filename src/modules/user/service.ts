@@ -1,7 +1,7 @@
 import { BadRequestError } from '@/libraries/error-handling';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 import bcrypt from 'bcrypt';
-import logger from '../../libraries/log/logger';
+import logger from '@/libraries/log/logger';
 import Model, { IUser } from './schema';
 interface SearchQuery {
   search?: string;
@@ -61,19 +61,16 @@ export const getCurrent = async (userId: string): Promise<IUser | null> => {
 };
 
 // Update current user
-export const updateUserById = async (
-  userId: string,
-  data: Partial<IUser>
-): Promise<IUser | null> => {
+export const updateById = async (userId: string, data: Partial<IUser>): Promise<IUser | null> => {
   if (data.password) {
     data.password = await bcrypt.hash(data.password, 10);
   }
   const item = await Model.findByIdAndUpdate(userId, data, { new: true }).select('-password');
   if (!item) {
-    logger.info(`updateUserById(): ${model} not found`, { userId });
+    logger.info(`updateById(): ${model} not found`, { userId });
     return null;
   }
-  logger.info(`updateUserById(): ${model} updated`, { userId });
+  logger.info(`updateById(): ${model} updated`, { userId });
   return item;
 };
 

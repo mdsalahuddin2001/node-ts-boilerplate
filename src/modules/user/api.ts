@@ -1,12 +1,12 @@
 import express, { NextFunction, Request, Response } from 'express';
-import logger from '../../libraries/log/logger';
-import { create, deleteById, getById, getCurrent, search, updateUserById } from './service';
+import logger from '@/libraries/log/logger';
+import { create, deleteById, getById, getCurrent, search, updateById } from './service';
 
 import { BadRequestError, NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import { authenticate, authorize } from '@/middlewares/auth';
 import { validateBody, validateParams } from '@/middlewares/request-validate';
-import { logRequest } from '../../middlewares/log';
+import { logRequest } from '@/middlewares/log';
 import {
   changePasswordSchema,
   createUserSchema,
@@ -99,7 +99,7 @@ const routes = (): express.Router => {
       if (!user) {
         throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me`);
       }
-      const item = await updateUserById(req?.user?.id || '', { name });
+      const item = await updateById(req?.user?.id || '', { name });
       if (!item) {
         throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me`);
       }
@@ -135,7 +135,7 @@ const routes = (): express.Router => {
           `module/user/api.ts - /me/change-password`
         );
       }
-      const item = await updateUserById(req?.user?.id || '', { password: newPassword });
+      const item = await updateById(req?.user?.id || '', { password: newPassword });
       if (!item) {
         throw new NotFoundError(`${model} not found`, `module/user/api.ts - /me/change-password`);
       }
@@ -179,7 +179,7 @@ const routes = (): express.Router => {
       if (!user) {
         throw new NotFoundError(`${model} not found`, `module/user/api.ts - /:id`);
       }
-      const item = await updateUserById(req?.params?.id || '', { name, email });
+      const item = await updateById(req?.params?.id || '', { name, email });
       if (!item) {
         throw new NotFoundError(`${model} not found`, `module/user/api.ts - /:id`);
       }
