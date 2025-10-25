@@ -4,9 +4,9 @@ import { create, deleteById, getById, search, updateById } from './service';
 
 import { NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
-import { validateBody, validateQuery } from '@/middlewares/request-validate';
+import { validateBody, validateParams, validateQuery } from '@/middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
-import { createSchema, searchQuerySchema, updateSchema } from './validation';
+import { createSchema, deleteSchema, searchQuerySchema, updateSchema } from './validation';
 
 const model: string = 'Product';
 
@@ -80,21 +80,23 @@ const routes = (): express.Router => {
       if (!item) {
         throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PATCH /:id`);
       }
-      res.status(200).json(item);
+      successResponse(res, { data: item, message: 'Product updated successfully' });
     }
   );
 
+  /* =================================================
+  DELETE - /api/v1/products/:id - Delete a Product by ID - Admin
+  ====================================================*/
   router.delete(
     '/:id',
     logRequest({}),
-    // validateRequest({ schema: idSchema, isParam: true }),
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        await deleteById(req.params.id);
-        res.status(204).json({ message: `${model} is deleted` });
-      } catch (error) {
-        next(error);
+    validateParams(deleteSchema),
+    async (req: Request, res: Response) => {
+      const deletedItem = await deleteById(req.params.id);
+      if (!deletedItem) {
+        throw new NotFoundError(`${model} not found`, `domain/product/api.ts - DELETE /:id`);
       }
+      successResponse(res, { data: deletedItem, message: 'Product deleted successfully' });
     }
   );
 

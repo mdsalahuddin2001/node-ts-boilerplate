@@ -51,10 +51,6 @@ const updateById = async (id: string, data: IData): Promise<any> => {
 
 const deleteById = async (id: string): Promise<IProduct | null> => {
   const deletedItem = await Model.findByIdAndDelete(id);
-  if (!deletedItem) {
-    logger.error(`deleteById(): Failed to delete model`, { id });
-    throw new BadRequestError('Item not found', `deleteById() ${model}-${id} failed`);
-  }
   return deletedItem;
 };
 

@@ -22,6 +22,10 @@ export const createSchema = z.object({
 
 export const updateSchema = createSchema.partial();
 
+export const deleteSchema = z.object({
+  id: idSchema,
+});
+
 // query schema
 export const searchQuerySchema = z.object({
   search: z.string().optional(),
