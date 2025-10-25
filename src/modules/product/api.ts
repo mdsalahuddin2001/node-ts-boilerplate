@@ -6,7 +6,7 @@ import { NotFoundError } from '@/libraries/error-handling';
 import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sendResponse';
 import { validateBody, validateQuery } from '@/middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
-import { createSchema, searchQuerySchema } from './validation';
+import { createSchema, searchQuerySchema, updateSchema } from './validation';
 
 const model: string = 'Product';
 
@@ -68,21 +68,19 @@ const routes = (): express.Router => {
     successResponse(res, { data });
   });
 
-  router.put(
+  /* =================================================
+  PATCH - /api/v1/products/:id - Update a Product by ID - Admin
+  ====================================================*/
+  router.patch(
     '/:id',
     logRequest({}),
-    // validateRequest({ schema: idSchema, isParam: true }),
-    // validateRequest({ schema: updateSchema }),
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const item = await updateById(req.params.id, req.body);
-        if (!item) {
-          throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PUT /:id`);
-        }
-        res.status(200).json(item);
-      } catch (error) {
-        next(error);
+    validateBody(updateSchema),
+    async (req: Request, res: Response) => {
+      const item = await updateById(req.params.id, req.body);
+      if (!item) {
+        throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PATCH /:id`);
       }
+      res.status(200).json(item);
     }
   );
 

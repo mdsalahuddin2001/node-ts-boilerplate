@@ -20,6 +20,8 @@ export const createSchema = z.object({
   updatedAt: z.date().optional(),
 });
 
+export const updateSchema = createSchema.partial();
+
 // query schema
 export const searchQuerySchema = z.object({
   search: z.string().optional(),
@@ -42,5 +44,7 @@ export const searchQuerySchema = z.object({
 });
 
 export type SearchQueryType = z.infer<typeof searchQuerySchema>;
+export type CreateType = z.infer<typeof createSchema>;
+export type UpdateType = z.infer<typeof updateSchema>;
 
 export const getByIdSchema = idSchema;

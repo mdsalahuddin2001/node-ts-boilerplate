@@ -44,13 +44,9 @@ const getById = async (id: string): Promise<any> => {
 };
 
 const updateById = async (id: string, data: IData): Promise<any> => {
-  try {
-    const item = await Model.findByIdAndUpdate(id, data, { new: true });
-    logger.info(`updateById(): model updated`, { id });
-    return item;
-  } catch (error: any) {
-    logger.error(`updateById(): Failed to update model`, error);
-  }
+  const item = await Model.findByIdAndUpdate(id, data, { new: true });
+  logger.info(`updateById(): model updated`, { id });
+  return item;
 };
 
 const deleteById = async (id: string): Promise<IProduct | null> => {
