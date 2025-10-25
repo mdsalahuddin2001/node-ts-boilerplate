@@ -1,34 +1,36 @@
-import { z } from 'zod';
 import { idSchema } from '@/libraries/utils/zod-validations';
+import { z } from 'zod';
 
-// Create schema
-export const createSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  // add other fields as needed
+// Cart item schema
+export const cartItemSchema = z.object({
+  product: idSchema,
+  quantity: z.number().int().positive('Quantity must be a positive number'),
 });
 
-// Update schema (partial of create)
-export const updateSchema = createSchema.partial();
+// Add item to cart
+export const addItemSchema = cartItemSchema;
 
-// Delete schema (ID validation)
-export const deleteSchema = z.object({
-  id: idSchema,
+// Update item quantity
+export const updateItemSchema = cartItemSchema;
+
+// Remove item from cart
+export const removeItemSchema = z.object({
+  product: idSchema,
 });
 
-// Query schema (generic for filtering, sorting, pagination, etc.)
-export const searchQuerySchema = z.object({
-  search: z.string().optional(),
-  sort: z.string().optional(),
-  limit: z.coerce.number().optional(),
-  page: z.coerce.number().optional(),
-  select: z.string().optional(),
+// Get cart schema (optional filters)
+export const getCartSchema = z.object({
+  userId: idSchema.optional(),
 });
 
-// Type inference helpers
-export type CreateType = z.infer<typeof createSchema>;
-export type UpdateType = z.infer<typeof updateSchema>;
-export type DeleteType = z.infer<typeof deleteSchema>;
-export type SearchQueryType = z.infer<typeof searchQuerySchema>;
+// Clear cart
+export const clearCartSchema = z.object({
+  userId: idSchema.optional(),
+});
 
-// Reuse the idSchema for get-by-id endpoints
-export const getByIdSchema = idSchema;
+export type CartItemType = z.infer<typeof cartItemSchema>;
+export type AddItemType = z.infer<typeof addItemSchema>;
+export type UpdateItemType = z.infer<typeof updateItemSchema>;
+export type RemoveItemType = z.infer<typeof removeItemSchema>;
+export type GetCartType = z.infer<typeof getCartSchema>;
+export type ClearCartType = z.infer<typeof clearCartSchema>;
