@@ -94,6 +94,9 @@ importers:
       sanitize-filename:
         specifier: ^1.6.3
         version: 1.6.3
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
       winston:
         specifier: ^3.17.0
         version: 3.18.3
@@ -7177,6 +7180,13 @@ packages:
       }
     engines: { node: '>= 0.4.0' }
 
+  uuid@13.0.0:
+    resolution:
+      {
+        integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==,
+      }
+    hasBin: true
+
   uuid@8.0.0:
     resolution:
       {
@@ -12344,6 +12354,8 @@ snapshots:
       which-typed-array: 1.1.19
 
   utils-merge@1.0.1: {}
+
+  uuid@13.0.0: {}
 
   uuid@8.0.0: {}
 

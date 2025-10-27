@@ -9,12 +9,12 @@ const createModule = async moduleName => {
 
   // Create the files
   await Promise.all([
-    $`touch ${baseDir}/api.js`,
-    $`touch ${baseDir}/event.js`,
-    $`touch ${baseDir}/index.js`,
-    $`touch ${baseDir}/request.js`,
-    $`touch ${baseDir}/schema.js`,
-    $`touch ${baseDir}/service.js`,
+    $`touch ${baseDir}/api.ts`,
+    $`touch ${baseDir}/event.ts`,
+    $`touch ${baseDir}/index.ts`,
+    $`touch ${baseDir}/validation.ts`,
+    $`touch ${baseDir}/schema.ts`,
+    $`touch ${baseDir}/service.ts`,
   ]);
 
   console.log(`✅ Module "${moduleName}" created successfully.`);

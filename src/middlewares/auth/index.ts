@@ -2,19 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError, ForbiddenError } from '@/libraries/error-handling';
 import { verifyAccessToken } from '@/libraries/utils/tokens';
 import logger from '@/libraries/log/logger';
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface User {
-      id: string;
-      email: string;
-      name?: string;
-      role: 'user' | 'admin' | 'vendor';
-      iat?: number;
-      exp?: number;
-    }
-  }
-}
 
 /**
  * Middleware to authenticate users using JWT token
@@ -52,6 +39,37 @@ export const authenticate = async (
   } catch (error) {
     logger.error('Authentication failed', error);
     next(new UnauthorizedError('Unauthenticated', 'authenticate middleware'));
+  }
+};
+export const checkUser = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Extract token from Authorization header or cookies
+    let token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) token = req.cookies?.access_token;
+
+    // If no token found, continue without setting user
+    if (!token) return next();
+
+    // Try verifying token
+    const payload = verifyAccessToken(token);
+
+    // Attach user to request
+    req.user = {
+      id: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+    };
+
+    next();
+  } catch (error) {
+    // Don’t block the request — just log the error and continue
+    logger.warn('Optional user check failed', error);
+    next();
   }
 };
 
