@@ -7,6 +7,8 @@ import { paginatedSuccessResponse, successResponse } from '@/libraries/utils/sen
 import { validateBody } from '@/middlewares/request-validate';
 import { logRequest } from '../../middlewares/log';
 import { createSchema } from './validation';
+import { checkUser } from '@/middlewares/auth';
+import { handleCartSession } from '@/middlewares/cart-session';
 
 const model: string = 'Product';
 
@@ -29,9 +31,12 @@ const routes = (): express.Router => {
   router.post(
     '/',
     logRequest({}),
+    checkUser,
+    handleCartSession,
     validateBody(createSchema),
     async (req: Request, res: Response) => {
-      const data = await create(req.body);
+      const orderInfo = createSchema.parse(req.body);
+      const data = await create(req.cartIdentifier!, orderInfo);
       successResponse(res, {
         data,
         statusCode: 201,

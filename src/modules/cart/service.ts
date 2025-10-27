@@ -3,6 +3,7 @@ import { BadRequestError, NotFoundError } from '@/libraries/error-handling';
 import Model, { ICart } from './schema';
 import { getById as getProductById } from '@/modules/product/service';
 import { AddItemType, UpdateItemType } from './validation';
+import { PopulatedCart } from './types';
 
 interface CartIdentifier {
   userId?: string;
@@ -354,10 +355,9 @@ const verifyCartItems = async (identifier: CartIdentifier) => {
     query.sessionId = identifier.sessionId;
   }
 
-  const cart = await Model.findOne(query).populate(
-    PRODUCT_PATH_IN_CART,
-    'name price stockQuantity status'
-  );
+  const cart = await Model.findOne(query)
+    .populate(PRODUCT_PATH_IN_CART, 'name price stockQuantity status')
+    .lean<PopulatedCart>();
 
   if (!cart || cart.items.length === 0) {
     throw new BadRequestError('Cart is empty', 'verifyCartItems() cart service');

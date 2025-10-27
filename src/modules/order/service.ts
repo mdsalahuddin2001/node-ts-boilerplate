@@ -1,7 +1,7 @@
 import { BadRequestError } from '@/libraries/error-handling';
 import logger from '@/libraries/log/logger';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
-import { verifyStockQuantity } from '../product/service';
+import { verifyCartItems } from '../cart/service';
 import Model, { IOrder } from './schema';
 import { OrderInput } from './validation';
 
@@ -18,15 +18,24 @@ const queryBuilder = new QueryBuilder({
   defaultSort: 'createdAt',
 });
 
-const create = async (orderData: OrderInput): Promise<any> => {
-  const { items } = orderData;
-  const { subtotal, populatedItems } = await verifyStockQuantity(items);
+const create = async (
+  identifier: { userId?: string; sessionId?: string },
+  orderInfo: OrderInput
+): Promise<any> => {
+  const { items, subtotal } = await verifyCartItems(identifier);
   const order = await Model.create({
-    ...orderData,
-    items: populatedItems,
+    ...orderInfo,
+    items: items?.map(item => ({
+      product: item.product?._id,
+      name: item.product?.name,
+      price: item.product?.price,
+      quantity: item.quantity,
+      total: item.quantity * item.product?.price,
+    })),
     subtotal,
     total: subtotal + 0,
   });
+  logger.info(`create(): ${model} created`, { id: order._id });
   return order;
 };
 

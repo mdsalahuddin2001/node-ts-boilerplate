@@ -1,9 +1,10 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { baseSchema } from '@/libraries/db/base-schema';
+import { IProduct } from '../product/schema';
 
 // Define interfaces for nested objects
 export interface IOrderItem {
-  product: mongoose.Schema.Types.ObjectId;
+  product: mongoose.Schema.Types.ObjectId | IProduct;
   name: string;
   price: number;
   quantity: number;

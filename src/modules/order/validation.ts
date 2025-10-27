@@ -19,7 +19,6 @@ export const shippingAddressSchema = z.object({
 
 // Main Order schema
 export const createSchema = z.object({
-  items: z.array(orderItemSchema).min(1, 'At least one item is required'),
   shippingAddress: shippingAddressSchema,
   status: z
     .enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])
