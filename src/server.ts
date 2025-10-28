@@ -13,6 +13,7 @@ import defineRoutes from './routes';
 import configs from './configs';
 import { errorResponse } from './libraries/utils/sendResponse';
 import '@/auth/strategies';
+import { addRequestIdMiddleware } from './middlewares/request-context';
 
 const SERVER_PORT = configs.PORT || 4000;
 
@@ -61,6 +62,7 @@ const securityMiddleware = (app: Application): void => {
 };
 /* ------ Standard Middlewares ----- */
 const standardMiddleware = (app: Application): void => {
+  app.use(addRequestIdMiddleware);
   app.set('query parser', (str: string) => qs.parse(str));
   app.use(
     compression({
