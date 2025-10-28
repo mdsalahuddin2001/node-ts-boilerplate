@@ -3,6 +3,7 @@ import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 import Model, { IProduct } from './schema';
 import { BadRequestError } from '@/libraries/error-handling';
 import { SearchQueryType } from './validation';
+import { ClientSession } from 'mongoose';
 
 const model: string = 'Product';
 
@@ -94,4 +95,36 @@ const verifyStockQuantity = async (items: { product: string; quantity: number }[
   };
 };
 
-export { create, deleteById, getById, search, updateById, verifyStockQuantity };
+// Update Stock Quantity with session support
+const updateStockQuantity = async (
+  items: { product: IProduct; quantity: number }[],
+  session?: ClientSession
+) => {
+  for (const item of items) {
+    const result = await Model.updateOne(
+      {
+        _id: item.product._id,
+        stockQuantity: { $gte: item.quantity }, // ✅ Atomic check-and-update
+      },
+      { $inc: { stockQuantity: -item.quantity } },
+      { session } // ✅ Pass session for transaction
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new BadRequestError(
+        `Insufficient stock for ${item.product.name}`,
+        'updateStockQuantity() method'
+      );
+    }
+  }
+};
+
+export {
+  create,
+  deleteById,
+  getById,
+  search,
+  updateById,
+  verifyStockQuantity,
+  updateStockQuantity,
+};

@@ -4,6 +4,7 @@ import Model, { ICart } from './schema';
 import { getById as getProductById } from '@/modules/product/service';
 import { AddItemType, UpdateItemType } from './validation';
 import { PopulatedCart } from './types';
+import { ClientSession } from 'mongoose';
 
 interface CartIdentifier {
   userId?: string;
@@ -412,6 +413,39 @@ const verifyCartItems = async (identifier: CartIdentifier) => {
     subtotal,
     items: cart.items,
   };
+};
+
+export const convertCart = async (identifier: CartIdentifier, session?: ClientSession) => {
+  try {
+    const query: any = { status: 'active' };
+
+    if (identifier.userId) {
+      query.user = identifier.userId;
+    } else if (identifier.sessionId) {
+      query.sessionId = identifier.sessionId;
+    } else {
+      logger.error('convertCart(): Neither userId nor sessionId provided');
+      return;
+    }
+
+    const cart = await Model.findOne(query);
+
+    if (cart) {
+      cart.status = 'converted';
+      await cart.save({ session });
+      logger.info('convertCart(): Cart marked as converted', {
+        userId: identifier.userId,
+        sessionId: identifier.sessionId,
+        cartId: cart._id,
+      });
+    }
+  } catch (error) {
+    logger.error('convertCart(): Failed to update cart status', {
+      userId: identifier.userId,
+      sessionId: identifier.sessionId,
+      error,
+    });
+  }
 };
 
 export {

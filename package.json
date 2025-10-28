@@ -18,6 +18,8 @@
     "dev": "tsx watch src/app.ts",
     "start": "NODE_ENV=production node dist/src/app.js",
     "start:prod": "pm2 start ecosystem.config.js",
+    "docker-dev:up": "docker compose -f docker-compose.dev.yml --env-file .env.development up",
+    "docker-dev:down": "docker compose -f docker-compose.dev.yml --env-file .env.development down",
     "type-check": "tsc --noEmit",
     "lint": "eslint src test --ext .ts,.js",
     "lint:fix": "eslint src test --ext .ts,.js --fix",

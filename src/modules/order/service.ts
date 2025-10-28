@@ -1,9 +1,11 @@
 import { BadRequestError } from '@/libraries/error-handling';
 import logger from '@/libraries/log/logger';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
-import { verifyCartItems } from '../cart/service';
+import { convertCart, verifyCartItems } from '../cart/service';
 import Model, { IOrder } from './schema';
 import { OrderInput } from './validation';
+import { updateStockQuantity } from '../product/service';
+import { withTransaction } from '@/libraries/utils/with-transaction';
 
 const model: string = 'Order';
 
@@ -22,21 +24,44 @@ const create = async (
   identifier: { userId?: string; sessionId?: string },
   orderInfo: OrderInput
 ): Promise<any> => {
-  const { items, subtotal } = await verifyCartItems(identifier);
-  const order = await Model.create({
-    ...orderInfo,
-    items: items?.map(item => ({
-      product: item.product?._id,
-      name: item.product?.name,
-      price: item.product?.price,
-      quantity: item.quantity,
-      total: item.quantity * item.product?.price,
-    })),
-    subtotal,
-    total: subtotal + 0,
+  return withTransaction(async session => {
+    logger.info('Order creation started', { identifier });
+    // Verify cart items
+    const { items, subtotal } = await verifyCartItems(identifier);
+
+    // create order
+    const order = await Model.create(
+      [
+        {
+          ...orderInfo,
+          items: items.map(item => ({
+            product: item.product._id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity,
+            total: item.quantity * item.product.price,
+          })),
+          subtotal,
+          total: subtotal,
+        },
+      ],
+      { session }
+    );
+
+    const orderDoc = order[0];
+    logger.info('Order created', { orderId: orderDoc._id });
+
+    // Convert cart
+    await convertCart(identifier, session);
+    logger.info('Cart marked as converted', { identifier });
+
+    // Update product stock
+    await updateStockQuantity(items, session);
+    logger.info('Stock updated', { productCount: items.length });
+
+    logger.info('Order creation completed', { orderId: orderDoc._id });
+    return orderDoc;
   });
-  logger.info(`create(): ${model} created`, { id: order._id });
-  return order;
 };
 
 interface SearchQuery {
