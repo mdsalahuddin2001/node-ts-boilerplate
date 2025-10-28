@@ -39,7 +39,7 @@ const search = async (query: SearchQueryType) => {
 };
 
 const getById = async (id: string): Promise<any> => {
-  const item = await Model.findById(id);
+  const item = await Model.findById(id).populate(['category', 'thumbnail', 'gallery']);
   logger.info(`getById(): ${model} fetched`, { id });
   return item;
 };
