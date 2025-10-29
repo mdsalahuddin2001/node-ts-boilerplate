@@ -36,7 +36,7 @@ const search = async (query: SearchQuery) => {
   const data = await queryBuilder
     .query(Model, query)
     .paginate()
-    .populate('parentId')
+    .populate('parent')
     .lean()
     .execute();
   return data;
@@ -45,14 +45,14 @@ const search = async (query: SearchQuery) => {
 // ------ Get category tree ------
 function nestedCategories(
   categories: ICategory[],
-  parentId: string | null = null
+  parent: string | null = null
 ): { _id: string; name: string; children: any[] }[] {
   const categoryList = [];
   let category: ICategory[];
-  if (parentId == null) {
-    category = categories.filter(cat => cat.parentId == null);
+  if (parent == null) {
+    category = categories.filter(cat => cat.parent == null);
   } else {
-    category = categories.filter(cat => String(cat.parentId) == String(parentId));
+    category = categories.filter(cat => String(cat.parent) == String(parent));
   }
 
   for (const cate of category) {
@@ -73,19 +73,14 @@ const getTree = async () => {
 };
 
 const getById = async (id: string): Promise<any> => {
-  const item = await Model.findById(id);
+  const item = await Model.findById(id).populate(['image', 'parent']);
   logger.info(`getById(): ${model} fetched`, { id });
   return item;
 };
 
 const updateById = async (id: string, data: IData): Promise<any> => {
-  try {
-    const item = await Model.findByIdAndUpdate(id, data, { new: true });
-    logger.info(`updateById(): model updated`, { id });
-    return item;
-  } catch (error: any) {
-    logger.error(`updateById(): Failed to update model`, error);
-  }
+  const item = await Model.findByIdAndUpdate(id, data, { new: true });
+  return item;
 };
 
 const deleteById = async (id: string): Promise<ICategory | null> => {

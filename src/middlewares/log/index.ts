@@ -1,23 +1,26 @@
+// src/middlewares/log-request.ts
 import { Request, Response, NextFunction } from 'express';
-import logger from '../../libraries/log/logger';
+import logger from '@/libraries/log/logger';
 
 interface LogRequestOptions {
   fields?: string[];
 }
 
-// Middleware to log the request
-const logRequest = ({ fields = [] }: LogRequestOptions = {}) => {
+export const logRequest = ({ fields = [] }: LogRequestOptions = {}) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const logData: Record<string, unknown> = {};
+    const startTime = Date.now();
 
-    if (req.params) {
-      logData.params = req.params;
-    }
-    if (req.query) {
-      logData.query = req.query;
-    }
+    const baseInfo = {
+      method: req.method,
+      path: req.originalUrl,
+      ip: req.ip,
+    };
+
+    const logData: Record<string, unknown> = { ...baseInfo };
+
+    // Log selective or full body
     if (req.body) {
-      if (fields && fields.length > 0) {
+      if (fields.length > 0) {
         fields.forEach(field => {
           // eslint-disable-next-line security/detect-object-injection
           if (req.body[field] !== undefined) {
@@ -30,22 +33,27 @@ const logRequest = ({ fields = [] }: LogRequestOptions = {}) => {
       }
     }
 
-    logger.info(`${req.method} ${req.originalUrl}`, logData);
+    if (req.query && Object.keys(req.query).length > 0) {
+      logData.query = req.query;
+    }
+    if (req.params && Object.keys(req.params).length > 0) {
+      logData.params = req.params;
+    }
 
-    // Store the original end method
-    const oldEnd = res.end;
-    // Override the end method
-    res.end = function (...args: unknown[]): Response<unknown, Record<string, unknown>> {
-      logger.info(`${req.method} ${req.originalUrl}`, {
+    // Log request start
+    logger.info('Incoming request', logData);
+
+    // Listen for response end
+    res.on('finish', () => {
+      const duration = Date.now() - startTime;
+
+      logger.info('Request completed', {
+        ...baseInfo,
         statusCode: res.statusCode,
+        duration,
       });
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
-      return oldEnd.apply(this, args);
-    };
+    });
 
     next();
   };
 };
-
-export { logRequest };

@@ -5,7 +5,7 @@ import { baseSchema } from '../../libraries/db/base-schema';
 export interface ICategory extends Document {
   name: string;
   description?: string;
-  parentId?: string | null;
+  parent?: string | null;
   image?: string;
 }
 
@@ -13,7 +13,7 @@ export interface ICategory extends Document {
 const categorySchema = new Schema<ICategory>({
   name: { type: String, required: true },
   description: { type: String },
-  parentId: { type: mongoose.Schema.Types.ObjectId, default: null, ref: 'Category' },
+  parent: { type: mongoose.Schema.Types.ObjectId, default: null, ref: 'Category' },
   image: { type: mongoose.Schema.Types.ObjectId, default: null, ref: 'File' },
 });
 

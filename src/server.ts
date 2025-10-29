@@ -13,7 +13,7 @@ import defineRoutes from './routes';
 import configs from './configs';
 import { errorResponse } from './libraries/utils/sendResponse';
 import '@/auth/strategies';
-import { addRequestIdMiddleware } from './middlewares/request-context';
+import { addRequestIdMiddleware, retrieveRequestId } from './middlewares/request-context';
 
 const SERVER_PORT = configs.PORT || 4000;
 
@@ -47,7 +47,7 @@ const securityMiddleware = (app: Application): void => {
         }
       },
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     })
   );
 
@@ -91,6 +91,7 @@ const routesMiddleware = (app: Application): void => {
 //   checkConnection();
 // };
 /* ------ Error Handler ----- */
+
 const errorHandler = (app: Application): void => {
   app.use(
     (
@@ -101,17 +102,33 @@ const errorHandler = (app: Application): void => {
         keyValue?: Record<string, any>;
         path?: string;
         value?: any;
+        comingFrom?: string;
+        stack?: string;
       },
-      _req: Request,
+      req: Request,
       res: Response,
       _next: NextFunction
     ) => {
-      logger.log('error', `Error Handler ${error.comingFrom || ''}:`, error);
+      const requestId = retrieveRequestId();
 
-      // Handle known Mongo/Mongoose error types
+      // Create a structured log entry for easier tracing and debugging
+      const logMeta = {
+        requestId,
+        method: req.method,
+        path: req.originalUrl,
+        service: 'api-service',
+        environment: process.env.NODE_ENV,
+        error_name: error.name,
+        error_message: error.message,
+        statusCode: error.statusCode || 500,
+        ...(process.env.NODE_ENV !== 'production' && error.stack && { stack: error.stack }),
+      };
+
+      logger.error(`Error Handler${error.comingFrom ? error.comingFrom : ''}`, logMeta);
+
+      // Handle Mongoose validation errors
       if (error.name === 'ValidationError') {
         const messages = Object.values(error.errors || {}).map((err: any) => err.message);
-
         return errorResponse(res, {
           statusCode: 400,
           status: 'fail',
@@ -120,6 +137,7 @@ const errorHandler = (app: Application): void => {
         });
       }
 
+      // Handle invalid ObjectId or cast errors
       if (error.name === 'CastError') {
         return errorResponse(res, {
           statusCode: 400,
@@ -128,6 +146,7 @@ const errorHandler = (app: Application): void => {
         });
       }
 
+      // Handle duplicate key errors (MongoDB)
       if (error.code === 11000) {
         const field = Object.keys(error.keyValue || {})[0];
         return errorResponse(res, {
@@ -137,12 +156,12 @@ const errorHandler = (app: Application): void => {
         });
       }
 
-      // Keep your original AppError & fallback handling
+      // Handle custom application-level errors
       if (error instanceof AppError) {
         return errorResponse(res, error.serializeErrors());
       }
 
-      // Fallback: unknown or unhandled error
+      // Fallback for unknown or unhandled errors
       return errorResponse(res, {
         statusCode: error.statusCode || 500,
         status: error.status || 'error',
@@ -151,6 +170,8 @@ const errorHandler = (app: Application): void => {
     }
   );
 };
+
+export default errorHandler;
 
 /* ------ Start Server ----- */
 const startServer = (app: Application): void => {

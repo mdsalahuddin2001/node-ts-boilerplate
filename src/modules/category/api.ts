@@ -60,14 +60,14 @@ const routes = (): express.Router => {
       if (!item) {
         throw new NotFoundError(`${model} not found`, `domain/product/api.ts - /:id`);
       }
-      res.status(200).json(item);
+      successResponse(res, { data: item });
     }
   );
 
   /*
   [PUT] /api/v1/categories/:id - Update category by ID - Public|Private|Admin
   */
-  router.put(
+  router.patch(
     '/:id',
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
@@ -76,9 +76,9 @@ const routes = (): express.Router => {
       try {
         const item = await updateById(req.params.id, req.body);
         if (!item) {
-          throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PUT /:id`);
+          throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PATCH /:id`);
         }
-        res.status(200).json(item);
+        successResponse(res, { data: item });
       } catch (error) {
         next(error);
       }
