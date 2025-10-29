@@ -72,16 +72,12 @@ const routes = (): express.Router => {
     logRequest({}),
     // validateRequest({ schema: idSchema, isParam: true }),
     // validateRequest({ schema: updateSchema }),
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const item = await updateById(req.params.id, req.body);
-        if (!item) {
-          throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PATCH /:id`);
-        }
-        successResponse(res, { data: item });
-      } catch (error) {
-        next(error);
+    async (req: Request, res: Response) => {
+      const item = await updateById(req.params.id, req.body);
+      if (!item) {
+        throw new NotFoundError(`${model} not found`, `domain/product/api.ts - PATCH /:id`);
       }
+      successResponse(res, { data: item });
     }
   );
 
