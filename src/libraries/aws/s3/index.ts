@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   PutObjectCommandOutput,
+  DeleteObjectsCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Readable } from 'stream';
@@ -64,7 +65,21 @@ export const deleteFromS3 = async (key: string): Promise<void> => {
 
   await s3Client.send(command);
 };
+export const deleteManyFromS3 = async (keys: string[]): Promise<void> => {
+  if (!keys.length) return;
 
+  const s3Client = createS3Client();
+
+  const command = new DeleteObjectsCommand({
+    Bucket: configs.AWS_S3_BUCKET,
+    Delete: {
+      Objects: keys.map(key => ({ Key: key })),
+      Quiet: true, // suppresses verbose success output
+    },
+  });
+
+  await s3Client.send(command);
+};
 export const generatePresignedUrl = async (
   key: string,
   expiresIn: number = 3600

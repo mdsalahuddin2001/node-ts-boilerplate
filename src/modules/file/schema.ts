@@ -13,6 +13,7 @@ export interface IFile {
   metadata?: Record<string, string | number | boolean>;
   createdAt?: Date;
   updatedAt?: Date;
+  isTemporary?: boolean;
 }
 
 const fileSchema = new Schema({
@@ -43,6 +44,10 @@ const fileSchema = new Schema({
   metadata: {
     type: Schema.Types.Mixed,
     default: {},
+  },
+  isTemporary: {
+    type: Schema.Types.Boolean,
+    default: true,
   },
 });
 

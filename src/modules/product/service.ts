@@ -4,6 +4,7 @@ import Model, { IProduct } from './schema';
 import { BadRequestError } from '@/libraries/error-handling';
 import { SearchQueryType } from './validation';
 import { ClientSession } from 'mongoose';
+import { fileQueue } from '@/libraries/bullmq';
 
 const model: string = 'Product';
 
@@ -25,6 +26,10 @@ const create = async (data: IData): Promise<any> => {
   logger.info(`create(): ${model} created`, {
     id: saved._id,
   });
+  const files = [];
+  if (saved?.thumbnail) files.push(saved.thumbnail);
+  if (item?.gallery) files.push(...item.gallery);
+  fileQueue.add('fileQueue', files);
   return saved;
 };
 

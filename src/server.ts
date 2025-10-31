@@ -8,13 +8,14 @@ import { Application, NextFunction, Request, Response, json, urlencoded } from '
 import cookieParser from 'cookie-parser';
 import { AppError, IErrorResponse } from './libraries/error-handling';
 // import { Channel } from 'amqplib';
-import logger from './libraries/log/logger';
-import defineRoutes from './routes';
-import configs from './configs';
-import { errorResponse } from './libraries/utils/sendResponse';
+import logger from '@/libraries/log/logger';
+import defineRoutes from '@/routes';
+import configs from '@/configs';
+import { errorResponse } from '@/libraries/utils/sendResponse';
 import '@/auth/strategies';
-import { addRequestIdMiddleware, retrieveRequestId } from './middlewares/request-context';
-
+import { addRequestIdMiddleware, retrieveRequestId } from '@/middlewares/request-context';
+import '@/libraries/bullmq';
+import { startCronJobs } from './crons/runners/scheduler';
 const SERVER_PORT = configs.PORT || 4000;
 
 const start = (app: Application): void => {
@@ -25,6 +26,8 @@ const start = (app: Application): void => {
   //   startQueues();
   //   startElasticSearch();
   errorHandler(app);
+
+  startCronJobs();
   startServer(app);
 };
 /* ------ Security Middlewares ----- */

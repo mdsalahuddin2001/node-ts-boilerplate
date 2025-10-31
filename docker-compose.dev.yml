@@ -23,8 +23,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      # RabbitMQ
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       # Email
       SMTP_HOST: sandbox.smtp.mailtrap.io
       SMTP_PORT: 465
@@ -41,8 +39,6 @@ services:
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
     depends_on:
       redis:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
     networks:
       - app-network
@@ -67,7 +63,7 @@ services:
     restart: unless-stopped
     ports:
       - '6379:6379'
-    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb
     volumes:
       - redis-data:/data
     networks:
@@ -87,46 +83,10 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
-
-  # RabbitMQ for message queuing
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: rabbitmq
-    restart: unless-stopped
-    ports:
-      - '5672:5672' # AMQP port
-      - '15672:15672' # Management UI
-    env_file:
-      - .env.development
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-    networks:
-      - app-network
-    healthcheck:
-      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    logging:
-      driver: 'json-file'
-      options:
-        max-size: '10m'
-        max-file: '3'
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
 networks:
   app-network:
     driver: bridge
 
 volumes:
   redis-data:
-    driver: local
-  rabbitmq-data:
     driver: local

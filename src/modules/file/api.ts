@@ -28,8 +28,8 @@ const routes = (): express.Router => {
   const router = express.Router();
   logger.info(`Setting up routes for ${model}`);
   /*
-[GET] /api/v1/files - Get all files - Public
-*/
+ [GET] /api/v1/files - Get all files - Public
+ */
   router.get('/', authenticate, authorize('admin', 'user'), async (req: Request, res: Response) => {
     const data = await queryBuilder.query(FileModel, req.query).paginate().lean().execute();
 
