@@ -16,7 +16,11 @@ import '@/auth/strategies';
 import { addRequestIdMiddleware, retrieveRequestId } from '@/middlewares/request-context';
 import '@/libraries/bullmq';
 import { startCronJobs } from './crons/runners/scheduler';
+import { Server } from 'socket.io';
+
 const SERVER_PORT = configs.PORT || 4000;
+
+let socketIO: Server;
 
 const start = (app: Application): void => {
   securityMiddleware(app);
@@ -177,16 +181,37 @@ const errorHandler = (app: Application): void => {
 export default errorHandler;
 
 /* ------ Start Server ----- */
-const startServer = (app: Application): void => {
+const startServer = async (app: Application): Promise<void> => {
   try {
     const httpServer: http.Server = new http.Server(app);
-    logger.info(`Server has started with process id ${process.pid}`);
-    httpServer.listen(SERVER_PORT, () => {
-      logger.info(`Server running on port ${SERVER_PORT}`);
-    });
+    const socketIOObj: Server = await createSocketIO(httpServer);
+    startHttpServer(httpServer);
+    socketIO = socketIOObj;
   } catch (error) {
     logger.log('error', 'startServer() method error:', error);
   }
 };
 
-export { start };
+/* -------- Create Socket IO ----------- */
+const createSocketIO = async (httpServer: http.Server): Promise<Server> => {
+  const io: Server = new Server(httpServer, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    },
+  });
+  return io;
+};
+
+const startHttpServer = (httpServer: http.Server): void => {
+  try {
+    logger.info(`Server has started with process id ${process.pid}`);
+    httpServer.listen(SERVER_PORT, () => {
+      logger.info(`Server running on port ${SERVER_PORT}`);
+    });
+  } catch (error) {
+    logger.log('error', 'Server startHttpServer() method error:', error);
+  }
+};
+
+export { start, socketIO };

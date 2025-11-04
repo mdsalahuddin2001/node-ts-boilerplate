@@ -9,6 +9,7 @@ import { logRequest } from '../../middlewares/log';
 import { createSchema } from './validation';
 import { checkUser } from '@/middlewares/auth';
 import { handleCartSession } from '@/middlewares/cart-session';
+import { emitOrderEvent } from './event';
 
 const model: string = 'Product';
 
@@ -21,6 +22,7 @@ const routes = (): express.Router => {
   [GET] /api/v1/products - Get All Products - Public
   */
   router.get('/', logRequest({}), async (req: Request, res: Response, _next: NextFunction) => {
+    emitOrderEvent('order.created', { message: 'Order created' });
     const data = await search(req.query);
     paginatedSuccessResponse(res, { data });
   });

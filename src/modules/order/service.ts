@@ -75,7 +75,7 @@ const search = async (query: SearchQuery) => {
   const data = await queryBuilder
     .query(Model, query)
     .paginate()
-    .populate('category')
+    // .populate('category')
     .lean()
     .execute();
   return data;
