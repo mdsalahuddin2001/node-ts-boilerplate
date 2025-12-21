@@ -1,7 +1,8 @@
+import configs from '@/configs';
 import { RedisOptions } from 'ioredis';
 
 export const redisConnection: RedisOptions = {
-  host: 'redis',
-  port: Number(process.env.REDIS_PORT || 6379),
-  password: process.env.REDIS_PASSWORD || undefined,
+  host: configs.REDIS_HOST,
+  port: Number(configs.REDIS_PORT || 6379),
+  password: configs.REDIS_PASSWORD || undefined,
 };

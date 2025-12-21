@@ -27,6 +27,11 @@ const schema = z.object({
     from: z.email('Invalid SMTP from email').min(1, 'SMTP from email is required'),
     fromName: z.string().min(1, 'SMTP from name is required'),
   }),
+
+  // Redis
+  REDIS_PASSWORD: z.string().min(1, 'REDIS_PASSWORD is required'),
+  REDIS_PORT: z.coerce.number().min(1000).default(6379),
+  REDIS_HOST: z.string().min(1, 'REDIS_HOST is required'),
 });
 
 export default schema;

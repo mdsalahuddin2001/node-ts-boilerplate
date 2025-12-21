@@ -56,7 +56,7 @@ fileSchema.add(baseSchema);
 
 fileSchema.index({ uploadedBy: 1 });
 fileSchema.index({ createdAt: -1 });
-fileSchema.index({ key: 1 }, { unique: true });
+// fileSchema.index({ key: 1 }, { unique: true }); // Removed: Duplicate index, already defined in schema path
 
 fileSchema.virtual('url').get(function () {
   const baseUrl = `https://${configs.AWS_S3_BUCKET}.s3.${configs.AWS_S3_REGION}.amazonaws.com`;

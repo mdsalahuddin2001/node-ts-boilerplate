@@ -3,6 +3,7 @@ import config from '../../configs';
 import logger from '../log/logger';
 
 const connectWithMongoDb = async (): Promise<void> => {
+  console.log('called connect with mongodb');
   try {
     const MONGODB_URI = config.MONGODB_URI as string;
 

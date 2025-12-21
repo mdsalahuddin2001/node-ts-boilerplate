@@ -14,6 +14,10 @@ function defineRoutes(expressApp: Application): void {
     res.send('OK');
   });
 
+  expressApp.get('/html', (_req: Request, res: Response) => {
+    res.sendFile('index.html', { root: __dirname });
+  });
+
   // 404 handler
   expressApp.use((_req: Request, res: Response) => {
     res.status(404).send('Not Found');

@@ -1,5 +1,5 @@
-import { socketIO } from '@/server';
+import { io } from '@/server';
 
 export const emitOrderEvent = (event: string, data: any) => {
-  socketIO.emit(event, data);
+  io.emit(event, data);
 };

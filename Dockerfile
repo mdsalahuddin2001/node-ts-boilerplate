@@ -39,9 +39,6 @@ COPY . .
 # Build TypeScript to JavaScript
 RUN pnpm run build
 
-# Remove dev dependencies
-RUN pnpm prune --prod
-
 # ============================================
 # Production stage
 # ============================================
@@ -61,8 +58,6 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 
-# Copy config files
-COPY --chown=nodejs:nodejs config ./config
 
 # Create logs directory with proper permissions
 RUN mkdir -p logs && chown -R nodejs:nodejs logs
