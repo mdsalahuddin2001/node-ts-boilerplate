@@ -1,7 +1,9 @@
 import { BadRequestError } from '@/libraries/error-handling';
 import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 import logger from '@/libraries/log/logger';
-import Model from './schema';
+import Model, { IVendor } from './schema';
+import { withTransaction } from '@/libraries/utils/with-transaction';
+import { create as createUser } from '@/modules/user/service';
 
 interface SearchQuery {
   search?: string;
@@ -11,15 +13,38 @@ interface SearchQuery {
 }
 
 // Create a new Vendor
-export const create = async (data: any): Promise<any> => {
-  const exists = await Model.findOne({ name: data.name });
-  if (exists) {
-    logger.error(`create(): Vendor already exists`, { name: data.name });
-    throw new BadRequestError(`Vendor already exists`, `Vendor service create()`);
-  }
-  const item = await Model.create(data);
-  logger.info(`create(): Vendor created`, { id: item._id });
-  return item;
+export const create = async ({
+  email,
+  name,
+  password,
+  role,
+  shopName,
+  description,
+  address,
+}: {
+  email: string;
+  name: string;
+  password: string;
+  role: 'vendor';
+  shopName: string;
+  description: string;
+  address: string;
+}): Promise<IVendor | null> => {
+  return withTransaction(async session => {
+    const user = await createUser({ email, name, password, role }, session);
+    if (!user) {
+      logger.error(`createVendor(): failed to create user`, { email });
+      throw new BadRequestError(`failed to create user`, `auth service createVendor() method`);
+    }
+    const vendor = new Model({ userId: user._id, shopName, description, address });
+    await vendor.save({ session });
+    await vendor.populate('userId');
+    if (!vendor) {
+      logger.error(`createVendor(): failed to create vendor`, { email });
+      throw new BadRequestError(`failed to create vendor`, `auth service createVendor() method`);
+    }
+    return vendor;
+  });
 };
 
 // Query Builder instance

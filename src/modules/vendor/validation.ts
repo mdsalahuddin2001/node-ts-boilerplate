@@ -3,8 +3,12 @@ import { idSchema } from '@/libraries/utils/zod-validations';
 
 // Create schema
 export const createSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  // add other fields as needed
+  name: z.string({}).min(1, 'Name is required'),
+  email: z.email('Provide a valid email address').min(1, 'Email is required'),
+  password: z.string().min(1, 'Password is required'),
+  shopName: z.string({}).min(1, 'Shop name is required'),
+  description: z.string({}).min(1, 'Description is required'),
+  address: z.string({}).min(1, 'Address is required'),
 });
 
 // Update schema (partial of create)

@@ -36,7 +36,9 @@ const routes = (): express.Router => {
     validateBody(createSchema),
     logRequest({}),
     async (req: Request, res: Response) => {
-      const item = await create(req.body);
+      const body = createSchema.parse(req.body);
+
+      const item = await create({ ...body, role: 'vendor' });
       successResponse(res, { data: item });
     }
   );
