@@ -5,7 +5,15 @@ import { authenticate, authorize } from '@/middlewares/auth';
 import { logRequest } from '@/middlewares/log';
 import { validateBody, validateParams } from '@/middlewares/request-validate';
 import express, { Request, Response } from 'express';
-import { create, deleteById, getById, getByUserId, search, updateById } from './service';
+import {
+  create,
+  deleteById,
+  getById,
+  getByUserId,
+  search,
+  updateById,
+  updateByUserId,
+} from './service';
 import { createSchema, deleteSchema, updateSchema } from './validation';
 
 const routes = (): express.Router => {
@@ -95,6 +103,23 @@ const routes = (): express.Router => {
     }
   );
 
+  /* =================================================
+  PATCH - /api/v1/vendors/me - Update vendor by ID - Admin
+  ====================================================*/
+  router.patch(
+    '/me',
+    authenticate,
+    authorize('vendor'),
+    validateBody(updateSchema),
+    logRequest({}),
+    async (req: Request, res: Response) => {
+      const item = await updateByUserId(req?.user?.id as string, req.body);
+      if (!item) {
+        throw new NotFoundError(`vendor not found`, `domain/vendors/api.ts - /me`);
+      }
+      successResponse(res, { data: item });
+    }
+  );
   /* =================================================
   PATCH - /api/v1/vendor:id - Update vendor by ID - Admin
   ====================================================*/

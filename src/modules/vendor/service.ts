@@ -92,6 +92,19 @@ export const updateById = async (id: string, data: Partial<IVendor>): Promise<IV
   logger.info(`updateById(): Vendor updated`, { id });
   return item;
 };
+// Update Vendor by User ID
+export const updateByUserId = async (
+  id: string,
+  data: Partial<IVendor>
+): Promise<IVendor | null> => {
+  const item = await Model.findOneAndUpdate({ userId: id }, data, { new: true });
+  if (!item) {
+    logger.info(`updateByUserId(): Vendor not found`, { userId: id });
+    return null;
+  }
+  logger.info(`updateByUserId(): Vendor updated`, { userId: id });
+  return item;
+};
 
 // Delete Vendor by ID
 export const deleteById = async (id: string): Promise<any> => {
