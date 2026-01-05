@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import { createUserSchema } from '@/modules/user/validation';
+import { createUserSchema, registerVendorSchema } from '@/modules/user/validation';
 import logger from '@/libraries/log/logger';
 import { successResponse } from '@/libraries/utils/sendResponse';
 import { validateBody } from '@/middlewares/request-validate';
@@ -34,20 +34,18 @@ const routes = (): express.Router => {
    */
   router.post(
     '/vendor/register',
-    validateBody(createUserSchema),
+    validateBody(registerVendorSchema),
     async (req: Request, res: Response) => {
-      console.log('hello');
-      const { email, password, name, shopName, description, address } = req.body;
+      const body = registerVendorSchema.parse(req.body);
       const item = await registerVendor({
-        email,
-        password,
-        name,
+        ...body,
         role: 'vendor',
-        shopName,
-        description,
-        address,
       });
-      successResponse(res, { data: item, message: 'User registered successfully' });
+      successResponse(res, {
+        data: item,
+        message:
+          'Vendor registered successfully, You will be notified once we approve your request',
+      });
     }
   );
 

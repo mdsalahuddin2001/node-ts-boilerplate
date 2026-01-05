@@ -3,6 +3,7 @@ import { QueryBuilder } from '@/libraries/query/QueryBuilder';
 import bcrypt from 'bcrypt';
 import logger from '@/libraries/log/logger';
 import Model, { IUser } from './schema';
+import { ClientSession } from 'mongoose';
 interface SearchQuery {
   search?: string;
   sort?: string;
@@ -13,24 +14,27 @@ interface SearchQuery {
 const model: string = 'User';
 
 // Create a new user
-export const create = async ({
-  email,
-  name,
-  password,
-  role,
-}: {
-  email: string;
-  name: string;
-  password: string;
-  role: 'admin' | 'user' | 'vendor';
-}): Promise<IUser | null> => {
+export const create = async (
+  {
+    email,
+    name,
+    password,
+    role,
+  }: {
+    email: string;
+    name: string;
+    password: string;
+    role: 'admin' | 'user' | 'vendor';
+  },
+  session?: ClientSession
+): Promise<IUser | null> => {
   const item = await Model.findOne({ email });
   if (item) {
     logger.error(`create(): ${model} already exists`, { email });
     throw new BadRequestError(`${model} already exists`, `user service create() method`);
   }
-  const newItem = await Model.create({ email, name, password, role });
-
+  const newItem = new Model({ email, name, password, role });
+  await newItem.save({ session });
   logger.info(`create(): ${model} created`, { email });
   return newItem;
 };

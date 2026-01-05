@@ -7,7 +7,6 @@ import { withTransaction } from '@/libraries/utils/with-transaction';
 import { IUser } from '@/modules/user/schema';
 import { create } from '@/modules/user/service';
 import VendorModel from '@/modules/vendor/schema';
-import UserModel from '@/modules/user/schema';
 
 // Register User
 export const register = async ({
@@ -53,12 +52,12 @@ export const registerVendor = async ({
   address: string;
 }): Promise<IUser | null> => {
   return withTransaction(async session => {
-    const user = await UserModel.create([{ email, name, password, role }], { session });
+    const user = await create({ email, name, password, role }, session);
     if (!user) {
       logger.error(`registerVendor(): failed to create user`, { email });
       throw new BadRequestError(`failed to create user`, `auth service registerVendor() method`);
     }
-    const vendor = new VendorModel({ userId: user[0]._id, shopName, description, address });
+    const vendor = new VendorModel({ userId: user._id, shopName, description, address });
     await vendor.save({ session });
     if (!vendor) {
       logger.error(`registerVendor(): failed to create vendor`, { email });

@@ -6,6 +6,14 @@ export const createUserSchema = z.object({
   email: z.email('Invalid email format').min(1, 'Email is required'),
   password: z.string().min(1, 'Password is required'),
 });
+export const registerVendorSchema = z.object({
+  name: z.string({}).min(1, 'Name is required'),
+  email: z.email('Provide a valid email address').min(1, 'Email is required'),
+  password: z.string().min(1, 'Password is required'),
+  shopName: z.string({}).min(1, 'Shop name is required'),
+  description: z.string({}).min(1, 'Description is required'),
+  address: z.string({}).min(1, 'Address is required'),
+});
 
 export const updateMeSchema = z.object({
   name: z.string().optional(),
