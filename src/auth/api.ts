@@ -5,7 +5,7 @@ import { successResponse } from '@/libraries/utils/sendResponse';
 import { validateBody } from '@/middlewares/request-validate';
 import { loginSchema } from './validation';
 import passport from 'passport';
-import { loginUser, refresh, register } from './service';
+import { loginUser, refresh, register, registerVendor } from './service';
 import { clearAuthCookies, setAuthCookies } from '@/libraries/utils/cookies';
 import { IUser } from '@/modules/user/schema';
 import { BadRequestError } from '@/libraries/error-handling';
@@ -27,6 +27,29 @@ const routes = (): express.Router => {
     const item = await register({ email, password, name, role: 'user' });
     successResponse(res, { data: item, message: 'User registered successfully' });
   });
+  /**
+   * @route POST /auth/vendor/register
+   * @description Register a new vendor
+   * @access Public
+   */
+  router.post(
+    '/vendor/register',
+    validateBody(createUserSchema),
+    async (req: Request, res: Response) => {
+      console.log('hello');
+      const { email, password, name, shopName, description, address } = req.body;
+      const item = await registerVendor({
+        email,
+        password,
+        name,
+        role: 'vendor',
+        shopName,
+        description,
+        address,
+      });
+      successResponse(res, { data: item, message: 'User registered successfully' });
+    }
+  );
 
   /**
    * @route POST /auth/login

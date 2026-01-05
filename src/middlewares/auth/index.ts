@@ -74,8 +74,8 @@ export const checkUser = async (
 };
 
 /**
- * Middleware to authorize users based on roles
- * @param roles - Array of allowed roles
+ * Middleware to authorize users based on role
+ * @param role - Array of allowed role
  */
 export const authorize = (...roles: Array<'user' | 'admin' | 'vendor'>) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
@@ -83,9 +83,9 @@ export const authorize = (...roles: Array<'user' | 'admin' | 'vendor'>) => {
       return next(new UnauthorizedError('Authentication required', 'authorize middleware'));
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req?.user?.role)) {
       logger.warn(
-        `User ${req.user.id} with role ${req.user.role} attempted to access resource requiring roles: ${roles.join(', ')}`
+        `User ${req?.user?.id} with role ${req?.user?.role} attempted to access resource requiring role ${roles.join(', ')}`
       );
       return next(
         new ForbiddenError(

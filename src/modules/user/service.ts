@@ -22,7 +22,7 @@ export const create = async ({
   email: string;
   name: string;
   password: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'vendor';
 }): Promise<IUser | null> => {
   const item = await Model.findOne({ email });
   if (item) {

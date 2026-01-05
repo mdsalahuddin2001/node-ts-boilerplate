@@ -7,18 +7,21 @@ interface IBaseSchema extends Document {
 }
 
 // Create the base schema with TypeScript
-const baseSchema = new Schema<IBaseSchema>({
-  createdAt: {
-    type: Date,
-    default: () => new Date(),
-    index: true
+const baseSchema = new Schema<IBaseSchema>(
+  {
+    createdAt: {
+      type: Date,
+      default: () => new Date(),
+      index: true,
+    },
+    updatedAt: {
+      type: Date,
+      default: () => new Date(),
+      index: true,
+    },
   },
-  updatedAt: {
-    type: Date,
-    default: () => new Date(),
-    index: true
-  }
-});
+  { timestamps: true }
+);
 
 // Export the baseSchema using TypeScript's module syntax
 export { baseSchema };
