@@ -6,6 +6,7 @@ import cartRoutes from './cart';
 import orderRoutes from './order';
 import fileRoutes from './file';
 import userRoutes from './user';
+import vendorRoutes from './vendor';
 
 const defineRoutes = async (expressRouter: Router): Promise<void> => {
   authRoutes(expressRouter);
@@ -15,6 +16,7 @@ const defineRoutes = async (expressRouter: Router): Promise<void> => {
   cartRoutes(expressRouter);
   orderRoutes(expressRouter);
   fileRoutes(expressRouter);
+  vendorRoutes(expressRouter);
 };
 
 export default defineRoutes;

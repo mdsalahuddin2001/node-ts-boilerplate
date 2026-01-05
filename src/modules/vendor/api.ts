@@ -57,6 +57,23 @@ const routes = (): express.Router => {
       successResponse(res, { data: item });
     }
   );
+  /* =================================================
+  PATCH - /api/v1/vendor/:id/status - Update vendor status by ID - Admin
+  ====================================================*/
+  router.patch(
+    '/:id/status',
+    authenticate,
+    logRequest({}),
+    validateParams(deleteSchema),
+    async (req: Request, res: Response) => {
+      const { status } = req.body;
+      const item = await updateById(req.params.id, { status });
+      if (!item) {
+        throw new NotFoundError(`vendor not found`, `domain/vendor/api.ts - /:id`);
+      }
+      successResponse(res, { data: item });
+    }
+  );
 
   /* =================================================
   PATCH - /api/v1/vendor:id - Update vendor by ID - Admin

@@ -8,7 +8,7 @@ export interface IVendor extends Document {
   shopName: string;
   description: string;
   address: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'suspended';
   // other fields here
 }
 
@@ -17,7 +17,7 @@ const schema = new Schema<IVendor>({
   shopName: { type: String, required: [true, 'Shop name is required'] },
   description: { type: String, required: [true, 'Description is required'] },
   address: { type: String, required: [true, 'Address is required'] },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'approved', 'suspended'], default: 'pending' },
 });
 
 // Add base schema (timestamps, etc.)

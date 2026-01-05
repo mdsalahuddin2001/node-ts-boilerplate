@@ -25,7 +25,6 @@ passport.use(
           });
         } else if (user.role === 'vendor') {
           const vendor = await VendorModel.findOne({ userId: user.id });
-          console.log({ vendor, user });
           if (!vendor || vendor.status !== 'approved')
             return done(null, false, { message: 'Invalid credentials' });
           return done(null, {
