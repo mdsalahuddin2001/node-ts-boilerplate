@@ -3,6 +3,8 @@
  * This file extends Express Request and other interfaces
  */
 
+import { IVendor } from '@/modules/vendor/schema';
+
 declare global {
   namespace Express {
     /**
@@ -15,6 +17,7 @@ declare global {
       role: 'user' | 'admin' | 'vendor';
       iat?: number;
       exp?: number;
+      vendor?: IVendor;
     }
 
     /**
