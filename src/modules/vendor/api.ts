@@ -90,7 +90,7 @@ const routes = (): express.Router => {
     async (req: Request, res: Response) => {
       const item = await updateById(req.params.id, req.body);
       if (!item) {
-        throw new NotFoundError(`vendor not found`, `domain/vendor/api.ts - /:id`);
+        throw new NotFoundError(`vendor not found`, `domain/vendors/api.ts - /:id`);
       }
       successResponse(res, { data: item });
     }

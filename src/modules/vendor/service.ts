@@ -62,7 +62,7 @@ export const search = async (query: SearchQuery) => {
 };
 
 // Get Vendor by ID
-export const getById = async (id: string): Promise<any> => {
+export const getById = async (id: string): Promise<IVendor | null> => {
   const item = await Model.findById(id);
   if (!item) {
     logger.info(`getById(): Vendor not found`, { id });
@@ -73,7 +73,7 @@ export const getById = async (id: string): Promise<any> => {
 };
 
 // Update Vendor by ID
-export const updateById = async (id: string, data: any): Promise<any> => {
+export const updateById = async (id: string, data: Partial<IVendor>): Promise<IVendor | null> => {
   const item = await Model.findByIdAndUpdate(id, data, { new: true });
   if (!item) {
     logger.info(`updateById(): Vendor not found`, { id });
