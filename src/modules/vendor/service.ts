@@ -71,6 +71,16 @@ export const getById = async (id: string): Promise<IVendor | null> => {
   logger.info(`getById(): Vendor fetched`, { id });
   return item;
 };
+// Get Vendor by User ID
+export const getByUserId = async (id: string): Promise<IVendor | null> => {
+  const item = await Model.findOne({ userId: id }).populate('userId');
+  if (!item) {
+    logger.info(`getByUserId(): Vendor not found`, { id });
+    return null;
+  }
+  logger.info(`getByUserId(): Vendor fetched`, { id });
+  return item;
+};
 
 // Update Vendor by ID
 export const updateById = async (id: string, data: Partial<IVendor>): Promise<IVendor | null> => {

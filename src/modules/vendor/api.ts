@@ -5,7 +5,7 @@ import { authenticate, authorize } from '@/middlewares/auth';
 import { logRequest } from '@/middlewares/log';
 import { validateBody, validateParams } from '@/middlewares/request-validate';
 import express, { Request, Response } from 'express';
-import { create, deleteById, getById, search, updateById } from './service';
+import { create, deleteById, getById, getByUserId, search, updateById } from './service';
 import { createSchema, deleteSchema, updateSchema } from './validation';
 
 const routes = (): express.Router => {
@@ -44,6 +44,23 @@ const routes = (): express.Router => {
   );
 
   /* =================================================
+  GET - /api/v1/vendors/me - Get me - vendor
+  ====================================================*/
+  router.get(
+    '/me',
+    authenticate,
+    authorize('vendor'),
+    logRequest({}),
+    async (req: Request, res: Response) => {
+      const item = await getByUserId(req?.user?.id as string);
+      if (!item) {
+        throw new NotFoundError(`vendor not found`, `domain/vendor/api.ts - /me`);
+      }
+      successResponse(res, { data: item });
+    }
+  );
+
+  /* =================================================
   GET - /api/v1/vendor:id - Get vendor by ID
   ====================================================*/
   router.get(
@@ -59,6 +76,7 @@ const routes = (): express.Router => {
       successResponse(res, { data: item });
     }
   );
+
   /* =================================================
   PATCH - /api/v1/vendor/:id/status - Update vendor status by ID - Admin
   ====================================================*/
