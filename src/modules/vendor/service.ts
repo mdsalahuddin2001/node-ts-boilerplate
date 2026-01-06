@@ -49,9 +49,9 @@ export const create = async ({
 
 // Query Builder instance
 const queryBuilder = new QueryBuilder({
-  searchFields: ['name'],
-  sortableFields: ['name', 'createdAt'],
-  filterableFields: ['name', 'createdAt'],
+  searchFields: ['shopName'],
+  sortableFields: ['shopName', 'createdAt'],
+  filterableFields: ['createdAt'],
   defaultSort: '-createdAt',
 });
 
